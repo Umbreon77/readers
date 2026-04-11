@@ -436,14 +436,14 @@
           <span>Speed</span><strong id="speedVal">1.0×</strong>
         </div>
         <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1"
-               oninput="updateSpeed(this.value)">
+               oninput="updateSpeedDisplay(this.value)" onchange="updateSpeedCommit(this.value)">
       </div>
       <div class="slider-block">
         <div class="slider-lbl">
           <span>Position</span><strong id="posVal">0%</strong>
         </div>
         <input type="range" id="posSlider" min="0" max="100" step="1" value="0"
-               oninput="seekPosition(this.value)">
+               oninput="seekPositionDisplay(this.value)" onchange="seekPositionCommit(this.value)">
       </div>
     </div>
 
@@ -473,6 +473,18 @@ let currentTheme = localStorage.getItem('vox_theme') || 'dark';
 let synth = window.speechSynthesis;
 let allVoices = [], voiceProfiles = [];
 let pasteVisible  = true;
+let pendingRestartTimer = null;
+let posSliderActive = false;
+
+// Shared helper: schedule a single delayed readFrom, clearing any pending one.
+// Prevents race conditions from rapid voice/speed/seek changes.
+function scheduleRestart(idx, delayMs) {
+  if (pendingRestartTimer) clearTimeout(pendingRestartTimer);
+  pendingRestartTimer = setTimeout(() => {
+    pendingRestartTimer = null;
+    readFrom(idx);
+  }, delayMs);
+}
 
 // ════════════════════════════════════════
 // VOICE LOADING — iOS loads voices async,
@@ -511,6 +523,10 @@ function buildVoiceProfiles() {
     return { ...pref, voice: matched || null };
   });
 
+  // Bounds-check persisted voice index (voicePrefs array may have shrunk)
+  if (selectedVoiceIdx >= voiceProfiles.length || selectedVoiceIdx < 0) {
+    selectedVoiceIdx = 0;
+  }
   renderVoiceGrid();
   return true;
 }
@@ -560,7 +576,7 @@ function selectVoice(idx) {
     synth.cancel();           // hard cancel
     isPlaying = false;
     // Small delay so iOS Web Speech has time to fully reset before new utterance
-    setTimeout(() => readFrom(resumeIdx), 300);
+    scheduleRestart(resumeIdx, 300);
   }
 }
 
@@ -613,6 +629,7 @@ function loadText() {
   pane.innerHTML = '';
   allWords = [];
 
+  const hasWordChar = /[\p{L}\p{N}]/u;
   sentences.forEach((sent, sIdx) => {
     const sSpan = document.createElement('span');
     sSpan.className = 'sentence';
@@ -620,18 +637,25 @@ function loadText() {
       if (/^\s+$/.test(tok)) {
         sSpan.appendChild(document.createTextNode(tok));
       } else if (tok) {
-        const w = document.createElement('span');
-        w.className = 'word';
-        w.textContent = tok;
-        const wIdx = allWords.length;
-        w.addEventListener('click', () => seekToWord(wIdx));
-        allWords.push({ el: w, sentenceEl: sSpan });
-        sSpan.appendChild(w);
+        if (hasWordChar.test(tok)) {
+          const w = document.createElement('span');
+          w.className = 'word';
+          w.textContent = tok;
+          const wIdx = allWords.length;
+          w.addEventListener('click', () => seekToWord(wIdx));
+          allWords.push({ el: w, sentenceEl: sSpan });
+          sSpan.appendChild(w);
+        } else {
+          // Punctuation-only token (—, (, ", etc.) — render as text, don't track as a word
+          sSpan.appendChild(document.createTextNode(tok));
+        }
       }
     });
     pane.appendChild(sSpan);
     if (sIdx < sentences.length - 1) pane.appendChild(document.createTextNode(' '));
   });
+
+  try { localStorage.setItem('vox_text', raw); } catch(e) {}
 
   updatePositionSlider();
   setStatus('Ready', '');
@@ -684,9 +708,8 @@ function readFrom(wordIdx) {
     const count  = before.trim() ? before.trim().split(/\s+/).length : 0;
     const newIdx = Math.min(wordIdx + count, allWords.length - 1);
     if (newIdx !== currentWordIdx) {
-      clearHighlights();
       currentWordIdx = newIdx;
-      highlightWord(currentWordIdx);
+      highlightWord(currentWordIdx); // this clears previous highlights internally
       updatePositionSlider();
       updateProgress();
     }
@@ -713,7 +736,9 @@ function readFrom(wordIdx) {
 }
 
 function pauseReading() {
-  synth.pause();
+  // On iOS, synth.pause() is unreliable — use cancel instead.
+  // togglePlay → readFrom(currentWordIdx) resumes cleanly from the right word.
+  synth.cancel();
   isPlaying = false;
   setPlayBtn(false);
   setStatus('Paused', 'paused');
@@ -744,12 +769,17 @@ function highlightWord(idx) {
   clearHighlights();
   el.classList.add('active-word');
   sentenceEl.classList.add('active-sentence');
-  // Scroll within the reader pane (not the page)
+  // Only scroll when the active word is near or past the pane edges.
+  // Avoids thrashing on every boundary event at fast speeds.
   const pane = document.getElementById('readerPane');
-  const elTop    = el.offsetTop;
-  const paneH    = pane.clientHeight;
-  const scrollTo = elTop - paneH * 0.4;
-  pane.scrollTo({ top: scrollTo, behavior: 'smooth' });
+  const elTop = el.offsetTop;
+  const elBot = elTop + el.offsetHeight;
+  const viewTop = pane.scrollTop;
+  const viewBot = viewTop + pane.clientHeight;
+  const margin = 60;
+  if (elTop < viewTop + margin || elBot > viewBot - margin) {
+    pane.scrollTo({ top: elTop - pane.clientHeight * 0.4, behavior: 'smooth' });
+  }
 }
 
 function clearHighlights() {
@@ -765,20 +795,25 @@ function seekToWord(wIdx) {
   synth.cancel();
   isPlaying = false;
   currentWordIdx = wIdx;
-  clearHighlights(); highlightWord(wIdx);
+  highlightWord(wIdx); // clears previous highlights internally
   updatePositionSlider(); updateProgress();
-  if (was) setTimeout(() => readFrom(wIdx), 150);
+  if (was) scheduleRestart(wIdx, 150);
 }
 
-function seekPosition(pct) {
+// Cheap label-only update while dragging position slider.
+function seekPositionDisplay(pct) {
+  document.getElementById('posVal').textContent = Math.round(pct) + '%';
+}
+// Commit the seek on drag release (change event), not every pixel (input event).
+function seekPositionCommit(pct) {
   if (!allWords.length) return;
   const idx = Math.round((pct / 100) * (allWords.length - 1));
-  document.getElementById('posVal').textContent = Math.round(pct) + '%';
   seekToWord(idx);
 }
 
 function updatePositionSlider() {
-  if (!allWords.length) return;
+  // Skip auto-updates while the user is actively dragging the slider.
+  if (!allWords.length || posSliderActive) return;
   const pct = (currentWordIdx / Math.max(allWords.length - 1, 1)) * 100;
   document.getElementById('posSlider').value = pct;
   document.getElementById('posVal').textContent = Math.round(pct) + '%';
@@ -786,8 +821,8 @@ function updatePositionSlider() {
 
 function updateProgress(force) {
   const pct = force !== undefined ? force
-    : allWords.length ? (currentWordIdx / allWords.length) * 100 : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
+    : allWords.length ? (currentWordIdx / Math.max(allWords.length - 1, 1)) * 100 : 0;
+  document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
 }
 
 // ════════════════════════════════════════
@@ -799,16 +834,20 @@ function applySpeedGradient(val) {
     `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--border) ${pct}%, var(--border) 100%)`;
 }
 
-function updateSpeed(val) {
+// Cheap label + gradient update while dragging (no speech restart).
+function updateSpeedDisplay(val) {
   speechRate = parseFloat(val);
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(val);
+}
+// Commit the speed change on drag release (change event), not every pixel.
+function updateSpeedCommit(val) {
+  speechRate = parseFloat(val);
   try { localStorage.setItem('vox_speed', speechRate); } catch(e) {}
   if (isPlaying) {
-    const resumeIdx = currentWordIdx;
     synth.cancel();
     isPlaying = false;
-    setTimeout(() => readFrom(resumeIdx), 150);
+    scheduleRestart(currentWordIdx, 150);
   }
 }
 
@@ -864,6 +903,21 @@ function setTheme(name, el) {
   ss.value = speechRate;
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(speechRate);
+
+  // Restore previously pasted text so refresh doesn't lose it.
+  const savedText = localStorage.getItem('vox_text');
+  if (savedText) document.getElementById('textInput').value = savedText;
+
+  // Track when the user is actively dragging the position slider so auto-updates
+  // from the boundary handler don't fight the user's input.
+  const ps = document.getElementById('posSlider');
+  const begin = () => { posSliderActive = true; };
+  const end   = () => { posSliderActive = false; };
+  ps.addEventListener('pointerdown', begin);
+  ps.addEventListener('pointerup', end);
+  ps.addEventListener('pointercancel', end);
+  ps.addEventListener('touchstart', begin, { passive: true });
+  ps.addEventListener('touchend', end);
 })();
 
 updateMeta();
