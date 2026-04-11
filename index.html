@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Readers</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: #111;
+      border-bottom: 2px solid #333;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 500;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .tab:hover { color: #ccc; }
+
+    .tab.active {
+      color: #fff;
+      border-bottom-color: #4a9eff;
+    }
+
+    .tab-content {
+      flex: 1;
+      display: none;
+      overflow: hidden;
+    }
+
+    .tab-content.active { display: flex; flex-direction: column; }
+
+    iframe {
+      width: 100%;
+      flex: 1;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tab-bar">
+    <div class="tab active" data-tab="ereader">E-Reader</div>
+    <div class="tab" data-tab="rsvp">RSVP Reader</div>
+  </div>
+
+  <div class="tab-content active" id="tab-ereader">
+    <iframe src="ereader.html" title="E-Reader"></iframe>
+  </div>
+
+  <div class="tab-content" id="tab-rsvp">
+    <iframe src="rsvp-reader.html" title="RSVP Reader"></iframe>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach(t => t.classList.toggle('active', t === tab));
+        panels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+      });
+    });
+  </script>
+
+</body>
+</html>
