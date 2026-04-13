@@ -491,12 +491,12 @@ function scheduleRestart(idx, delayMs) {
 // retry until they arrive
 // ════════════════════════════════════════
 const voicePrefs = [
-  { name: "James",   gender: "♂", accent: "GB", keywords: ["Daniel","en-GB"],            color: "#4f9de8", bg: "#1a3050" },
-  { name: "Sophie",  gender: "♀", accent: "GB", keywords: ["Kate","Serena","en-GB"],      color: "#e87cb0", bg: "#4a1e35" },
-  { name: "William", gender: "♂", accent: "US", keywords: ["Alex","Tom","Aaron","en-US"], color: "#6dbf7c", bg: "#1a3828" },
-  { name: "Claire",  gender: "♀", accent: "US", keywords: ["Samantha","Ava","en-US"],     color: "#d4a26a", bg: "#3d2a14" },
-  { name: "Arthur",  gender: "♂", accent: "GB", keywords: ["Arthur","Oliver","Malcolm","en-GB"], color: "#a07cd4", bg: "#2a1a40" },
-  { name: "Emma",    gender: "♀", accent: "US", keywords: ["Karen","Victoria","Zoe","en-US"],    color: "#e8c46a", bg: "#3d3214" },
+  { name: "James",   gender: "♂", accent: "GB", keywords: ["Daniel"],   color: "#4f9de8", bg: "#1a3050" },
+  { name: "Sophie",  gender: "♀", accent: "GB", keywords: ["Martha"],   color: "#e87cb0", bg: "#4a1e35" },
+  { name: "William", gender: "♂", accent: "US", keywords: ["Aaron"],    color: "#6dbf7c", bg: "#1a3828" },
+  { name: "Claire",  gender: "♀", accent: "US", keywords: ["Samantha"], color: "#d4a26a", bg: "#3d2a14" },
+  { name: "Arthur",  gender: "♂", accent: "GB", keywords: ["Arthur"],   color: "#a07cd4", bg: "#2a1a40" },
+  { name: "Emma",    gender: "♀", accent: "US", keywords: ["Nicky"],    color: "#e8c46a", bg: "#3d3214" },
 ];
 
 function buildVoiceProfiles() {
@@ -555,7 +555,6 @@ function renderVoiceGrid() {
       <div class="voice-avatar" style="background:${vp.bg};color:${vp.color}">${vp.gender}</div>
       <div class="voice-info">
         <div class="voice-name">${vp.name}</div>
-        <div class="voice-meta">${vp.voice ? vp.voice.name.split(' ').slice(0,2).join(' ') : 'Default'}</div>
         <span class="voice-tag">${vp.accent === 'GB' ? 'British' : 'American'}</span>
       </div>`;
     div.addEventListener('click', () => selectVoice(i));
