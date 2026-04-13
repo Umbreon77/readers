@@ -503,6 +503,9 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
+// Only these British voices are worth showing — others sound bad.
+const GB_ALLOWLIST = new Set(['Martha','Arthur','Daniel']);
+
 // Gender hints for known voices (everything else falls back to ♂)
 const FEMALE_VOICES = new Set([
   'Samantha','Martha','Nicky','Flo','Sandy','Shelley','Grandma',
@@ -526,7 +529,13 @@ function buildVoiceProfiles() {
 
   voiceProfiles = allVoices
     .filter(v => v.lang === 'en-US' || v.lang === 'en-GB')
-    .filter(v => !NOVELTY_VOICES.has(v.name.split(' (')[0]))
+    .filter(v => v.localService !== false) // drop cloud voices (Google) — they lag
+    .filter(v => {
+      const base = v.name.split(' (')[0];
+      if (NOVELTY_VOICES.has(base)) return false;
+      if (v.lang === 'en-GB' && !GB_ALLOWLIST.has(base)) return false;
+      return true;
+    })
     .sort((a, b) => {
       if (a.lang !== b.lang) return a.lang === 'en-GB' ? -1 : 1;
       return a.name.localeCompare(b.name);
