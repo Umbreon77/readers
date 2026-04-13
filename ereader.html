@@ -476,6 +476,12 @@ let pasteVisible  = true;
 let pendingRestartTimer = null;
 let posSliderActive = false;
 
+// iOS Web Speech needs a buffer after cancel() before a new utterance.
+// Desktop browsers don't — using the same delay makes voice switching feel laggy.
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const VOICE_SWITCH_DELAY = IS_IOS ? 300 : 40;
+
 // Shared helper: schedule a single delayed readFrom, clearing any pending one.
 // Prevents race conditions from rapid voice/speed/seek changes.
 function scheduleRestart(idx, delayMs) {
@@ -589,7 +595,7 @@ function selectVoice(idx) {
     synth.cancel();           // hard cancel
     isPlaying = false;
     // Small delay so iOS Web Speech has time to fully reset before new utterance
-    scheduleRestart(resumeIdx, 300);
+    scheduleRestart(resumeIdx, VOICE_SWITCH_DELAY);
   }
 }
 
