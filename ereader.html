@@ -503,8 +503,9 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
-// Only these British voices are worth showing — others sound bad.
+// Only these voices are worth showing — others sound bad.
 const GB_ALLOWLIST = new Set(['Martha','Arthur','Daniel']);
+const US_ALLOWLIST = new Set(['Aaron','Nicky','Samantha']);
 
 // Gender hints for known voices (everything else falls back to ♂)
 const FEMALE_VOICES = new Set([
@@ -534,6 +535,7 @@ function buildVoiceProfiles() {
       const base = v.name.split(' (')[0];
       if (NOVELTY_VOICES.has(base)) return false;
       if (v.lang === 'en-GB' && !GB_ALLOWLIST.has(base)) return false;
+      if (v.lang === 'en-US' && !US_ALLOWLIST.has(base)) return false;
       return true;
     })
     .sort((a, b) => {
