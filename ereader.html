@@ -490,40 +490,54 @@ function scheduleRestart(idx, delayMs) {
 // VOICE LOADING — iOS loads voices async,
 // retry until they arrive
 // ════════════════════════════════════════
-const voicePrefs = [
-  { name: "James",   gender: "♂", accent: "GB", keywords: ["Daniel"],   color: "#4f9de8", bg: "#1a3050" },
-  { name: "Sophie",  gender: "♀", accent: "GB", keywords: ["Martha"],   color: "#e87cb0", bg: "#4a1e35" },
-  { name: "William", gender: "♂", accent: "US", keywords: ["Aaron"],    color: "#6dbf7c", bg: "#1a3828" },
-  { name: "Claire",  gender: "♀", accent: "US", keywords: ["Samantha"], color: "#d4a26a", bg: "#3d2a14" },
-  { name: "Arthur",  gender: "♂", accent: "GB", keywords: ["Arthur"],   color: "#a07cd4", bg: "#2a1a40" },
-  { name: "Emma",    gender: "♀", accent: "US", keywords: ["Nicky"],    color: "#e8c46a", bg: "#3d3214" },
+// Novelty/robot voices to exclude — not useful for reading prose
+const NOVELTY_VOICES = new Set([
+  'Albert','Bad News','Bahh','Bells','Boing','Bubbles','Cellos','Fred',
+  'Good News','Jester','Junior','Kathy','Organ','Ralph','Superstar',
+  'Trinoids','Whisper','Wobble','Zarvox'
+]);
+
+// Gender hints for known voices (everything else falls back to ♂)
+const FEMALE_VOICES = new Set([
+  'Samantha','Martha','Nicky','Flo','Sandy','Shelley','Grandma',
+  'Ava','Karen','Catherine','Kate','Moira','Serena','Tessa','Victoria','Zoe',
+  'Google UK English Female'
+]);
+
+// Colour palette cycled across the grid
+const VOICE_PALETTE = [
+  { color: '#4f9de8', bg: '#1a3050' },
+  { color: '#e87cb0', bg: '#4a1e35' },
+  { color: '#6dbf7c', bg: '#1a3828' },
+  { color: '#d4a26a', bg: '#3d2a14' },
+  { color: '#a07cd4', bg: '#2a1a40' },
+  { color: '#e8c46a', bg: '#3d3214' },
 ];
 
 function buildVoiceProfiles() {
   allVoices = synth.getVoices();
   if (!allVoices.length) return false;
 
-  voiceProfiles = voicePrefs.map(pref => {
-    let matched = null;
-    for (const kw of pref.keywords) {
-      // exact name match first
-      matched = allVoices.find(v => v.name.toLowerCase().includes(kw.toLowerCase()));
-      if (matched) break;
-      // then lang prefix
-      matched = allVoices.find(v => v.lang === kw);
-      if (matched) break;
-    }
-    // fallback: any voice with matching lang prefix
-    if (!matched) {
-      const langPrefix = pref.accent === 'GB' ? 'en-GB' : 'en-US';
-      matched = allVoices.find(v => v.lang.startsWith(langPrefix));
-    }
-    // final fallback: any English voice
-    if (!matched) matched = allVoices.find(v => v.lang.startsWith('en'));
-    return { ...pref, voice: matched || null };
-  });
+  voiceProfiles = allVoices
+    .filter(v => v.lang === 'en-US' || v.lang === 'en-GB')
+    .filter(v => !NOVELTY_VOICES.has(v.name.split(' (')[0]))
+    .sort((a, b) => {
+      if (a.lang !== b.lang) return a.lang === 'en-GB' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    })
+    .map((v, i) => {
+      const base = v.name.split(' (')[0];
+      const accent = v.lang === 'en-GB' ? 'GB' : 'US';
+      return {
+        name: `${base} (${accent})`,
+        gender: FEMALE_VOICES.has(base) ? '♀' : '♂',
+        accent,
+        ...VOICE_PALETTE[i % VOICE_PALETTE.length],
+        voice: v,
+      };
+    });
 
-  // Bounds-check persisted voice index (voicePrefs array may have shrunk)
+  // Bounds-check persisted voice index (voice list may have shrunk)
   if (selectedVoiceIdx >= voiceProfiles.length || selectedVoiceIdx < 0) {
     selectedVoiceIdx = 0;
   }
