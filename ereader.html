@@ -223,6 +223,8 @@
     text-align: center; padding: 40px 0;
     font-size: 0.95rem;
   }
+  .para { margin-bottom: 0.8em; }
+  .para:last-child { margin-bottom: 0; }
 
   .progress-track {
     height: 2px; background: var(--border);
@@ -665,36 +667,49 @@ function loadText() {
 
   stopReading();
   currentWordIdx = 0;
-  sentences = tokenize(raw);
+  sentences = [];
 
   const pane = document.getElementById('readerPane');
   pane.innerHTML = '';
   allWords = [];
 
   const hasWordChar = /[\p{L}\p{N}]/u;
-  sentences.forEach((sent, sIdx) => {
-    const sSpan = document.createElement('span');
-    sSpan.className = 'sentence';
-    sent.split(/(\s+)/).forEach(tok => {
-      if (/^\s+$/.test(tok)) {
-        sSpan.appendChild(document.createTextNode(tok));
-      } else if (tok) {
-        if (hasWordChar.test(tok)) {
-          const w = document.createElement('span');
-          w.className = 'word';
-          w.textContent = tok;
-          const wIdx = allWords.length;
-          w.addEventListener('click', () => seekToWord(wIdx));
-          allWords.push({ el: w, sentenceEl: sSpan });
-          sSpan.appendChild(w);
-        } else {
-          // Punctuation-only token (—, (, ", etc.) — render as text, don't track as a word
+  const paragraphs = raw.split(/\n\s*\n/).filter(p => p.trim());
+
+  paragraphs.forEach((para) => {
+    const paraText = para.trim().replace(/\n/g, ' ');
+    const paraDiv = document.createElement('div');
+    paraDiv.className = 'para';
+
+    const paraSentences = tokenize(paraText);
+    sentences.push(...paraSentences);
+
+    paraSentences.forEach((sent, sIdx) => {
+      const sSpan = document.createElement('span');
+      sSpan.className = 'sentence';
+      sent.split(/(\s+)/).forEach(tok => {
+        if (/^\s+$/.test(tok)) {
           sSpan.appendChild(document.createTextNode(tok));
+        } else if (tok) {
+          if (hasWordChar.test(tok)) {
+            const w = document.createElement('span');
+            w.className = 'word';
+            w.textContent = tok;
+            const wIdx = allWords.length;
+            w.addEventListener('click', () => seekToWord(wIdx));
+            allWords.push({ el: w, sentenceEl: sSpan, paraEnd: false });
+            sSpan.appendChild(w);
+          } else {
+            sSpan.appendChild(document.createTextNode(tok));
+          }
         }
-      }
+      });
+      paraDiv.appendChild(sSpan);
+      if (sIdx < paraSentences.length - 1) paraDiv.appendChild(document.createTextNode(' '));
     });
-    pane.appendChild(sSpan);
-    if (sIdx < sentences.length - 1) pane.appendChild(document.createTextNode(' '));
+
+    if (allWords.length > 0) allWords[allWords.length - 1].paraEnd = true;
+    pane.appendChild(paraDiv);
   });
 
   try { localStorage.setItem('vox_text', raw); } catch(e) {}
@@ -702,10 +717,9 @@ function loadText() {
   updatePositionSlider();
   setStatus('Ready', '');
   updateProgress();
-  // Collapse paste strip after loading text, update button state
-  pasteVisible = true; // ensure toggle works correctly
+  updateReadTime();
+  pasteVisible = true;
   togglePaste();
-  // Scroll reader to top
   pane.scrollTop = 0;
 }
 
@@ -722,7 +736,11 @@ function readFrom(wordIdx) {
   // Only cancel if something is already queued/speaking (avoids disrupting cold start on iOS)
   if (synth.speaking || synth.pending) synth.cancel();
 
-  const wordsToRead = allWords.slice(wordIdx).map(w => w.el.textContent).join(' ');
+  const wordsToRead = allWords.slice(wordIdx).map((w, i, arr) => {
+    let text = w.el.textContent;
+    if (w.paraEnd && i < arr.length - 1 && !/[.!?…]/.test(text.slice(-1))) text += '.';
+    return text;
+  }).join(' ');
   if (!wordsToRead.trim()) { stopReading(); return; }
 
   utterance = new SpeechSynthesisUtterance(wordsToRead);
