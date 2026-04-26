@@ -54,8 +54,9 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  html, body {
-    height: 100%;
+  html { height: 100%; }
+  body {
+    min-height: 100%;
     font-family: 'Lora', Georgia, serif;
     background: var(--bg);
     color: var(--text);
@@ -319,6 +320,7 @@
   .voice-section {
     padding: 0 16px 16px;
     background: var(--bg);
+    flex-shrink: 0;
   }
   .voice-section-label {
     font-family: 'JetBrains Mono', monospace;
