@@ -661,7 +661,7 @@ function tokenize(text) {
   // Protect common abbreviations so their periods don't trigger sentence splits
   const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|est|fig|govt|incl|no|Vol|vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi;
   const safe = text.replace(abbrevPat, m => m.slice(0, -1) + '\x00');
-  return (safe.match(/[^.!?…]+(?:[.!?…]+["'»]*(?:\s|$)|\s*$)/g)
+  return (safe.match(/[^.!?…]+(?:[.!?…]+["'»‘’“”]*(?:\s|$)|\s*$)/g)
     ?.map(s => s.trim().replace(/\x00/g, '.'))
     .filter(Boolean)) || [text];
 }
