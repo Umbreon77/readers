@@ -632,7 +632,19 @@ function updateMeta() {
   const text = document.getElementById('textInput').value.trim();
   const wc = text ? text.split(/\s+/).filter(Boolean).length : 0;
   document.getElementById('wordCount').textContent = wc.toLocaleString() + ' words';
-  document.getElementById('readTime').textContent = '~' + Math.ceil(wc / 200) + ' min';
+  updateReadTime();
+}
+
+function updateReadTime() {
+  let wc;
+  if (allWords.length) {
+    wc = Math.max(allWords.length - currentWordIdx, 0);
+  } else {
+    const text = document.getElementById('textInput').value.trim();
+    wc = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  }
+  const mins = Math.ceil(wc / (200 * speechRate));
+  document.getElementById('readTime').textContent = '~' + mins + ' min';
 }
 
 // ════════════════════════════════════════
@@ -739,9 +751,10 @@ function readFrom(wordIdx) {
     const newIdx = Math.min(wordIdx + count, allWords.length - 1);
     if (newIdx !== currentWordIdx) {
       currentWordIdx = newIdx;
-      highlightWord(currentWordIdx); // this clears previous highlights internally
+      highlightWord(currentWordIdx);
       updatePositionSlider();
       updateProgress();
+      updateReadTime();
     }
   };
 
@@ -752,6 +765,7 @@ function readFrom(wordIdx) {
     setStatus('Finished', '');
     currentWordIdx = allWords.length;
     updateProgress(100);
+    updateReadTime();
   };
 
   utterance.onerror = (e) => {
@@ -785,7 +799,7 @@ function stopReading(resetHL = true) {
 function skipBack() {
   stopReading();
   currentWordIdx = 0;
-  updatePositionSlider(); updateProgress();
+  updatePositionSlider(); updateProgress(); updateReadTime();
   if (allWords.length) highlightWord(0);
   document.getElementById('readerPane').scrollTop = 0;
 }
@@ -825,8 +839,8 @@ function seekToWord(wIdx) {
   synth.cancel();
   isPlaying = false;
   currentWordIdx = wIdx;
-  highlightWord(wIdx); // clears previous highlights internally
-  updatePositionSlider(); updateProgress();
+  highlightWord(wIdx);
+  updatePositionSlider(); updateProgress(); updateReadTime();
   if (was) scheduleRestart(wIdx, 150);
 }
 
@@ -869,6 +883,7 @@ function updateSpeedDisplay(val) {
   speechRate = parseFloat(val);
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(val);
+  updateReadTime();
 }
 // Commit the speed change on drag release (change event), not every pixel.
 function updateSpeedCommit(val) {
