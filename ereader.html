@@ -536,15 +536,13 @@ function buildVoiceProfiles() {
   if (!allVoices.length) return false;
 
   voiceProfiles = allVoices
-    .filter(v => IS_IOS ? v.lang.startsWith('en') : (v.lang === 'en-US' || v.lang === 'en-GB'))
-    .filter(v => v.localService !== false)
+    .filter(v => v.lang === 'en-US' || v.lang === 'en-GB')
+    .filter(v => v.localService !== false) // drop cloud voices (Google) — they lag
     .filter(v => {
       const base = v.name.split(' (')[0];
       if (NOVELTY_VOICES.has(base)) return false;
-      if (!IS_IOS) {
-        if (v.lang === 'en-GB' && !GB_ALLOWLIST.has(base)) return false;
-        if (v.lang === 'en-US' && !US_ALLOWLIST.has(base)) return false;
-      }
+      if (v.lang === 'en-GB' && !GB_ALLOWLIST.has(base)) return false;
+      if (v.lang === 'en-US' && !US_ALLOWLIST.has(base)) return false;
       return true;
     })
     .sort((a, b) => {
@@ -553,7 +551,7 @@ function buildVoiceProfiles() {
     })
     .map((v, i) => {
       const base = v.name.split(' (')[0];
-      const accent = v.lang.split('-')[1] || 'US';
+      const accent = v.lang === 'en-GB' ? 'GB' : 'US';
       return {
         name: `${base} (${accent})`,
         gender: FEMALE_VOICES.has(base) ? '♀' : '♂',
@@ -595,7 +593,7 @@ function renderVoiceGrid() {
       <div class="voice-avatar" style="background:${vp.bg};color:${vp.color}">${vp.gender}</div>
       <div class="voice-info">
         <div class="voice-name">${vp.name}</div>
-        <span class="voice-tag">${{GB:'British',US:'American',AU:'Australian',IE:'Irish',IN:'Indian',ZA:'South African'}[vp.accent] || vp.accent}</span>
+        <span class="voice-tag">${vp.accent === 'GB' ? 'British' : 'American'}</span>
       </div>`;
     div.addEventListener('click', () => selectVoice(i));
     grid.appendChild(div);
@@ -662,10 +660,10 @@ function updateReadTime() {
 function tokenize(text) {
   // Protect common abbreviations so their periods don't trigger sentence splits
   const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|est|fig|govt|incl|no|Vol|vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi;
-  const safe = text.replace(abbrevPat, m => m.slice(0, -1) + ‘\x00’)
-                    .replace(/(\d)\.(\d)/g, ‘$1\x01$2’);
-  return (safe.match(/[^.!?…]+(?:[.!?…]+[“’»’’””]*(?:\s|$)|\s*$)/g)
-    ?.map(s => s.trim().replace(/\x00/g, '.').replace(/\x01/g, '.'))
+  const safe = text.replace(abbrevPat, m => m.slice(0, -1) + '\x00')
+                    .replace(/(\d)\.(\d)/g, '$1\x00$2');
+  return (safe.match(/[^.!?…]+(?:[.!?…]+["'»‘’“”]*(?:\s|$)|\s*$)/g)
+    ?.map(s => s.trim().replace(/\x00/g, '.'))
     .filter(Boolean)) || [text];
 }
 
