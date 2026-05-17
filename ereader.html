@@ -109,14 +109,17 @@
 
   /* ── PAGE SHELL ────────────────────────── */
   /* Everything sits below fixed header */
+  /* Document scrolls naturally — iOS Safari's collapsing toolbar
+     breaks `position:fixed; bottom:0` scroll containers, hiding the
+     bottom (voice section) behind the toolbar. dvh + safe-area keeps
+     the full page reachable. */
   .page {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding-top: var(--header-h);
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   /* ── PASTE STRIP ───────────────────────── */
@@ -510,9 +513,13 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
-// Only these voices are worth showing — others sound bad.
-const GB_ALLOWLIST = new Set(['Martha','Arthur','Daniel']);
-const US_ALLOWLIST = new Set(['Aaron','Nicky','Samantha']);
+// Preferred "persona" voices, in display order. These float to the
+// top of the grid IF the device exposes them — but unlike a hard
+// allowlist, we fall back to whatever other good English voices the
+// device has so the grid is never near-empty (iOS Safari exposes
+// only a subset of the voices listed in iOS Settings).
+const PREFERRED = ['Samantha','Aaron','Nicky','Daniel','Martha','Arthur'];
+const MAX_VOICES = 6;
 
 // Gender hints for known voices (everything else falls back to ♂)
 const FEMALE_VOICES = new Set([
@@ -535,27 +542,39 @@ function buildVoiceProfiles() {
   allVoices = synth.getVoices();
   if (!allVoices.length) return false;
 
-  voiceProfiles = allVoices
-    .filter(v => v.lang === 'en-US' || v.lang === 'en-GB')
+  const candidates = allVoices
+    .filter(v => /^en[-_]/i.test(v.lang) || v.lang.toLowerCase() === 'en')
     .filter(v => v.localService !== false) // drop cloud voices (Google) — they lag
+    .filter(v => !NOVELTY_VOICES.has(v.name.split(' (')[0]));
+
+  // Rank: preferred personas first (in listed order), then the rest A–Z
+  candidates.sort((a, b) => {
+    const ai = PREFERRED.indexOf(a.name.split(' (')[0]);
+    const bi = PREFERRED.indexOf(b.name.split(' (')[0]);
+    const ar = ai === -1 ? 99 : ai;
+    const br = bi === -1 ? 99 : bi;
+    if (ar !== br) return ar - br;
+    return a.name.localeCompare(b.name);
+  });
+
+  // De-dupe by base name (iOS lists compact + enhanced separately)
+  // then cap the grid to MAX_VOICES.
+  const seen = new Set();
+  voiceProfiles = candidates
     .filter(v => {
       const base = v.name.split(' (')[0];
-      if (NOVELTY_VOICES.has(base)) return false;
-      if (v.lang === 'en-GB' && !GB_ALLOWLIST.has(base)) return false;
-      if (v.lang === 'en-US' && !US_ALLOWLIST.has(base)) return false;
+      if (seen.has(base)) return false;
+      seen.add(base);
       return true;
     })
-    .sort((a, b) => {
-      if (a.lang !== b.lang) return a.lang === 'en-GB' ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    })
+    .slice(0, MAX_VOICES)
     .map((v, i) => {
       const base = v.name.split(' (')[0];
-      const accent = v.lang === 'en-GB' ? 'GB' : 'US';
+      const region = (v.lang.split(/[-_]/)[1] || 'US').toUpperCase();
       return {
-        name: `${base} (${accent})`,
+        name: `${base} (${region})`,
         gender: FEMALE_VOICES.has(base) ? '♀' : '♂',
-        accent,
+        accent: region,
         ...VOICE_PALETTE[i % VOICE_PALETTE.length],
         voice: v,
       };
