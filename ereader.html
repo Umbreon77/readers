@@ -518,16 +518,14 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
-// Preferred "persona" voices, in display order. These float to the
-// top of the grid IF the device exposes them — but unlike a hard
-// allowlist, we fall back to whatever other good English voices the
-// device has so the grid is never near-empty (iOS Safari exposes
-// only a subset of the voices listed in iOS Settings).
-// Show only these three, in this order — whichever the device's
-// Web Speech API actually exposes (iOS may expose fewer than are
-// installed in iOS Settings; that's an API limit we can't override).
+// Preferred picks, shown first IF the device exposes them. iOS Safari
+// only hands a subset of installed voices to the Web Speech API (this
+// phone exposes only Samantha + Daniel), so we can't force Aaron/Nicky
+// if iOS won't surface them. Backfill the rest of the grid with other
+// real English voices the device has, US-accent first, so there are
+// always usable choices instead of just one.
 const PREFERRED = ['Samantha','Aaron','Nicky'];
-const MAX_VOICES = PREFERRED.length;
+const MAX_VOICES = 6;
 
 // Gender hints for known voices (everything else falls back to ♂)
 const FEMALE_VOICES = new Set([
@@ -551,15 +549,20 @@ function buildVoiceProfiles() {
   if (!allVoices.length) return false;
 
   const candidates = allVoices
-    .filter(v => PREFERRED.includes(v.name.split(' (')[0]));
+    .filter(v => /^en[-_]/i.test(v.lang) || v.lang.toLowerCase() === 'en')
+    .filter(v => v.localService !== false) // drop cloud voices (Google) — they lag
+    .filter(v => !NOVELTY_VOICES.has(v.name.split(' (')[0]));
 
-  // Rank: preferred personas first (in listed order), then the rest A–Z
+  // Rank: preferred personas first (in listed order); then backfill,
+  // US-accent voices before other English accents, A–Z within each.
+  const isUS = v => /^en[-_]?us$/i.test(v.lang.replace('_','-'));
   candidates.sort((a, b) => {
     const ai = PREFERRED.indexOf(a.name.split(' (')[0]);
     const bi = PREFERRED.indexOf(b.name.split(' (')[0]);
     const ar = ai === -1 ? 99 : ai;
     const br = bi === -1 ? 99 : bi;
     if (ar !== br) return ar - br;
+    if (isUS(a) !== isUS(b)) return isUS(a) ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
 
