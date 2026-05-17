@@ -12,6 +12,7 @@
       background: #1a1a1a;
       color: #e0e0e0;
       height: 100vh;
+      height: 100dvh; /* exclude iOS Safari toolbar so iframe isn't clipped */
       display: flex;
       flex-direction: column;
     }
@@ -67,11 +68,11 @@
   </div>
 
   <div class="tab-content active" id="tab-ereader">
-    <iframe src="ereader.html" title="E-Reader"></iframe>
+    <iframe src="ereader.html?v=4" title="E-Reader"></iframe>
   </div>
 
   <div class="tab-content" id="tab-rsvp">
-    <iframe src="rsvp-reader.html" title="RSVP Reader"></iframe>
+    <iframe src="rsvp-reader.html?v=4" title="RSVP Reader"></iframe>
   </div>
 
   <script>
