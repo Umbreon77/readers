@@ -527,6 +527,12 @@ const NOVELTY_VOICES = new Set([
 const PREFERRED = ['Samantha','Aaron','Nicky'];
 const MAX_VOICES = 6;
 
+// Region code → human label for the sub-tag under each voice name
+const ACCENT_LABEL = {
+  US: 'American', GB: 'British', AU: 'Australian', IE: 'Irish',
+  IN: 'Indian', ZA: 'South African', CA: 'Canadian', NZ: 'New Zealand',
+};
+
 // Gender hints for known voices (everything else falls back to ♂)
 const FEMALE_VOICES = new Set([
   'Samantha','Martha','Nicky','Flo','Sandy','Shelley','Grandma',
@@ -621,7 +627,7 @@ function renderVoiceGrid() {
       <div class="voice-avatar" style="background:${vp.bg};color:${vp.color}">${vp.gender}</div>
       <div class="voice-info">
         <div class="voice-name">${vp.name}</div>
-        <span class="voice-tag">${vp.accent === 'GB' ? 'British' : 'American'}</span>
+        <span class="voice-tag">${ACCENT_LABEL[vp.accent] || vp.accent}</span>
       </div>`;
     div.addEventListener('click', () => selectVoice(i));
     grid.appendChild(div);
