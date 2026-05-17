@@ -468,6 +468,11 @@
   <div class="voice-section">
     <div class="voice-section-label">Voice</div>
     <div class="voice-grid" id="voiceGrid"></div>
+    <pre id="voiceDebug" style="display:none;white-space:pre-wrap;
+      font-family:'JetBrains Mono',monospace;font-size:0.62rem;
+      color:var(--text-muted);margin-top:14px;padding:10px;
+      border:1px solid var(--border);border-radius:8px;
+      background:var(--surface2);"></pre>
   </div>
 
   <div class="bottom-safe"></div>
@@ -518,14 +523,13 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
-// Preferred picks, shown first IF the device exposes them. iOS Safari
-// only hands a subset of installed voices to the Web Speech API (this
-// phone exposes only Samantha + Daniel), so we can't force Aaron/Nicky
-// if iOS won't surface them. Backfill the rest of the grid with other
-// real English voices the device has, US-accent first, so there are
-// always usable choices instead of just one.
+// Show ONLY these, in this order — no backfill with other accents.
+// iOS Safari only exposes voices that are actually downloaded on the
+// device (Settings > Accessibility > Spoken Content > Voices), so
+// Nicky appears here once it's downloaded on the iPhone.
+// Add ?debug=1 to the URL to dump the full raw voice list iOS exposes.
 const PREFERRED = ['Samantha','Aaron','Nicky'];
-const MAX_VOICES = 6;
+const MAX_VOICES = PREFERRED.length;
 
 // Region code → human label for the sub-tag under each voice name
 const ACCENT_LABEL = {
@@ -554,23 +558,25 @@ function buildVoiceProfiles() {
   allVoices = synth.getVoices();
   if (!allVoices.length) return false;
 
-  const candidates = allVoices
-    .filter(v => /^en[-_]/i.test(v.lang) || v.lang.toLowerCase() === 'en')
-    .filter(v => v.localService !== false) // drop cloud voices (Google) — they lag
-    .filter(v => !NOVELTY_VOICES.has(v.name.split(' (')[0]));
+  // Diagnostic: ?debug=1 dumps every voice iOS hands to Safari so we
+  // can confirm whether Nicky appears once downloaded on the device.
+  if (/[?&]debug/.test(location.search)) {
+    const dbg = document.getElementById('voiceDebug');
+    if (dbg) {
+      dbg.style.display = 'block';
+      dbg.textContent =
+        `RAW VOICES EXPOSED (${allVoices.length}):\n` +
+        allVoices.map(v =>
+          `• ${v.name} | ${v.lang} | local:${v.localService}`).join('\n');
+    }
+  }
 
-  // Rank: preferred personas first (in listed order); then backfill,
-  // US-accent voices before other English accents, A–Z within each.
-  const isUS = v => /^en[-_]?us$/i.test(v.lang.replace('_','-'));
-  candidates.sort((a, b) => {
-    const ai = PREFERRED.indexOf(a.name.split(' (')[0]);
-    const bi = PREFERRED.indexOf(b.name.split(' (')[0]);
-    const ar = ai === -1 ? 99 : ai;
-    const br = bi === -1 ? 99 : bi;
-    if (ar !== br) return ar - br;
-    if (isUS(a) !== isUS(b)) return isUS(a) ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
+  const candidates = allVoices
+    .filter(v => PREFERRED.includes(v.name.split(' (')[0]));
+
+  // Order strictly by the PREFERRED list
+  candidates.sort((a, b) =>
+    PREFERRED.indexOf(a.name.split(' (')[0]) - PREFERRED.indexOf(b.name.split(' (')[0]));
 
   // De-dupe by base name (iOS lists compact + enhanced separately)
   // then cap the grid to MAX_VOICES.
