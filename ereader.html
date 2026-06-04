@@ -583,16 +583,20 @@ function buildVoiceProfiles() {
   const isEng = v => /^en/i.test(v.lang);
   const isUS  = v => /en[-_]US/i.test(v.lang);
 
-  // 1) Preferred voices, in PREFERRED order, but only when the device has them.
+  // Show ONLY the preferred voices the device actually has, in PREFERRED order.
+  // (Samantha + Nicky on the user's Mac today; Aaron auto-appears if macOS ever
+  // ships/reinstalls it, since it's still in PREFERRED.)
   const preferred = [];
   PREFERRED.forEach(name => {
     allVoices.filter(v => baseName(v) === name).forEach(v => preferred.push(v));
   });
-  // 2) Backfill so the grid is never a lonely single button: other real
-  //    (non-novelty) American voices first, then any other English voice.
-  const extraUS  = allVoices.filter(v => isUS(v)  && !NOVELTY_VOICES.has(baseName(v)));
-  const extraEng = allVoices.filter(v => isEng(v) && !isUS(v) && !NOVELTY_VOICES.has(baseName(v)));
-  const candidates = [...preferred, ...extraUS, ...extraEng];
+  // Safety net ONLY: if the device exposes none of the preferred voices, fall
+  // back to real (non-novelty) English voices so the grid is never empty.
+  const backfill = preferred.length ? [] : [
+    ...allVoices.filter(v => isUS(v)  && !NOVELTY_VOICES.has(baseName(v))),
+    ...allVoices.filter(v => isEng(v) && !isUS(v) && !NOVELTY_VOICES.has(baseName(v))),
+  ];
+  const candidates = [...preferred, ...backfill];
 
   // De-dupe by base name (iOS lists compact + enhanced separately)
   // then cap the grid to MAX_VOICES.
