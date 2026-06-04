@@ -512,6 +512,12 @@ function scheduleRestart(idx, delayMs) {
   }, delayMs);
 }
 
+// A user-initiated stop must win any in-flight scheduled restart, otherwise
+// speech can resume on its own ~40-300ms after the user paused/stopped.
+function cancelPendingRestart() {
+  if (pendingRestartTimer) { clearTimeout(pendingRestartTimer); pendingRestartTimer = null; }
+}
+
 // ════════════════════════════════════════
 // VOICE LOADING — iOS loads voices async,
 // retry until they arrive
@@ -523,13 +529,15 @@ const NOVELTY_VOICES = new Set([
   'Trinoids','Whisper','Wobble','Zarvox'
 ]);
 
-// Show ONLY these, in this order — no backfill with other accents.
-// iOS Safari only exposes voices that are actually downloaded on the
-// device (Settings > Accessibility > Spoken Content > Voices), so
-// Nicky appears here once it's downloaded on the iPhone.
-// Add ?debug=1 to the URL to dump the full raw voice list iOS exposes.
+// Try to surface these first, in this order. They have to be DOWNLOADED
+// per device to exist at all (macOS: System Settings > Accessibility >
+// Spoken Content > System Voice > Manage Voices; iOS: Settings >
+// Accessibility > Spoken Content > Voices). When one isn't installed we
+// don't leave a near-empty grid — we backfill with other real (non-novelty)
+// American English voices so there's always a usable set of choices.
+// Add ?debug=1 to the URL to dump the full raw voice list the device exposes.
 const PREFERRED = ['Samantha','Aaron','Nicky'];
-const MAX_VOICES = PREFERRED.length;
+const MAX_VOICES = 6;
 
 // Region code → human label for the sub-tag under each voice name
 const ACCENT_LABEL = {
@@ -571,26 +579,34 @@ function buildVoiceProfiles() {
     }
   }
 
-  const candidates = allVoices
-    .filter(v => PREFERRED.includes(v.name.split(' (')[0]));
+  const baseName = v => v.name.split(' (')[0];
+  const isEng = v => /^en/i.test(v.lang);
+  const isUS  = v => /en[-_]US/i.test(v.lang);
 
-  // Order strictly by the PREFERRED list
-  candidates.sort((a, b) =>
-    PREFERRED.indexOf(a.name.split(' (')[0]) - PREFERRED.indexOf(b.name.split(' (')[0]));
+  // 1) Preferred voices, in PREFERRED order, but only when the device has them.
+  const preferred = [];
+  PREFERRED.forEach(name => {
+    allVoices.filter(v => baseName(v) === name).forEach(v => preferred.push(v));
+  });
+  // 2) Backfill so the grid is never a lonely single button: other real
+  //    (non-novelty) American voices first, then any other English voice.
+  const extraUS  = allVoices.filter(v => isUS(v)  && !NOVELTY_VOICES.has(baseName(v)));
+  const extraEng = allVoices.filter(v => isEng(v) && !isUS(v) && !NOVELTY_VOICES.has(baseName(v)));
+  const candidates = [...preferred, ...extraUS, ...extraEng];
 
   // De-dupe by base name (iOS lists compact + enhanced separately)
   // then cap the grid to MAX_VOICES.
   const seen = new Set();
   voiceProfiles = candidates
     .filter(v => {
-      const base = v.name.split(' (')[0];
+      const base = baseName(v);
       if (seen.has(base)) return false;
       seen.add(base);
       return true;
     })
     .slice(0, MAX_VOICES)
     .map((v, i) => {
-      const base = v.name.split(' (')[0];
+      const base = baseName(v);
       const region = (v.lang.split(/[-_]/)[1] || 'US').toUpperCase();
       return {
         name: `${base} (${region})`,
@@ -697,14 +713,38 @@ function updateReadTime() {
 // ════════════════════════════════════════
 // LOAD TEXT
 // ════════════════════════════════════════
+// Strip common Markdown so syntax isn't read aloud and link URLs don't
+// blow up the tokenizer. Paragraph breaks (blank lines) are preserved.
+function stripMarkdown(text) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')              // fenced code blocks
+    .replace(/`([^`]+)`/g, '$1')                  // inline code
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')     // images -> alt text
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')      // links -> link text
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')           // # headings
+    .replace(/^\s{0,3}>\s?/gm, '')                // > blockquotes
+    .replace(/^\s{0,3}[-*+]\s+/gm, '')            // - bullet lists
+    .replace(/^\s{0,3}\d+\.\s+/gm, '')            // 1. numbered lists
+    .replace(/^\s{0,3}([-*_]\s*){3,}$/gm, '')     // --- horizontal rules
+    .replace(/\*\*([^*]+)\*\*/g, '$1')            // **bold**
+    .replace(/__([^_]+)__/g, '$1')                // __bold__
+    .replace(/\*([^*]+)\*/g, '$1')                // *italic*
+    .replace(/~~([^~]+)~~/g, '$1')                // ~~strikethrough~~
+    .replace(/\|/g, ' ');                         // table pipes
+}
+
 function tokenize(text) {
-  // Protect common abbreviations so their periods don't trigger sentence splits
+  // Protect common abbreviations + decimals so their periods don't split sentences
   const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|est|fig|govt|incl|no|Vol|vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi;
   const safe = text.replace(abbrevPat, m => m.slice(0, -1) + '\x00')
                     .replace(/(\d)\.(\d)/g, '$1\x00$2');
-  return (safe.match(/[^.!?…]+(?:[.!?…]+["'»‘’“”]*(?:\s|$)|\s*$)/g)
-    ?.map(s => s.trim().replace(/\x00/g, '.'))
-    .filter(Boolean)) || [text];
+  // Split AFTER every run of sentence terminators (plus trailing quotes/brackets),
+  // regardless of what follows. Unlike a single match() regex, this never silently
+  // drops a sentence whose terminator isn't followed by a space (run-ons, URLs).
+  return safe.replace(/([.!?…]+["'»‘’“”)\]]*)/g, '$1\x01')
+             .split('\x01')
+             .map(s => s.trim().replace(/\x00/g, '.'))
+             .filter(Boolean);
 }
 
 function loadText() {
@@ -720,7 +760,7 @@ function loadText() {
   allWords = [];
 
   const hasWordChar = /[\p{L}\p{N}]/u;
-  const paragraphs = raw.split(/\n\s*\n/).filter(p => p.trim());
+  const paragraphs = stripMarkdown(raw).split(/\n\s*\n/).filter(p => p.trim());
 
   paragraphs.forEach((para) => {
     const paraText = para.trim().replace(/\n/g, ' ');
@@ -774,7 +814,12 @@ function loadText() {
 // ════════════════════════════════════════
 function togglePlay() {
   if (!allWords.length) { loadText(); if (!allWords.length) return; }
-  isPlaying ? pauseReading() : readFrom(currentWordIdx);
+  if (isPlaying) { pauseReading(); return; }
+  // After a chapter finishes, currentWordIdx sits at allWords.length, which would
+  // make readFrom() speak an empty string and silently bounce to 'Ready'. Treat a
+  // Play tap from the end as a request to replay from the top.
+  const startIdx = currentWordIdx >= allWords.length ? 0 : currentWordIdx;
+  readFrom(startIdx);
 }
 
 function readFrom(wordIdx) {
@@ -846,6 +891,7 @@ function readFrom(wordIdx) {
 function pauseReading() {
   // On iOS, synth.pause() is unreliable — use cancel instead.
   // togglePlay → readFrom(currentWordIdx) resumes cleanly from the right word.
+  cancelPendingRestart();
   synth.cancel();
   isPlaying = false;
   setPlayBtn(false);
@@ -853,6 +899,7 @@ function pauseReading() {
 }
 
 function stopReading(resetHL = true) {
+  cancelPendingRestart();
   synth.cancel();
   isPlaying = false;
   if (resetHL) clearHighlights();
