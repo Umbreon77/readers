@@ -54,14 +54,13 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  html { height: 100%; }
   body {
-    min-height: 100%;
     font-family: 'Lora', Georgia, serif;
     background: var(--bg);
     color: var(--text);
     transition: background var(--tr), color var(--tr);
-    overflow-x: hidden;
+    padding-top: var(--header-h);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 
   /* ── HEADER ────────────────────────────── */
@@ -70,23 +69,32 @@
     top: 0; left: 0; right: 0;
     height: var(--header-h);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 14px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     z-index: 300;
   }
   .logo {
     font-family: 'Playfair Display', serif;
-    font-size: 1.25rem; font-weight: 600;
+    font-size: 1.15rem; font-weight: 600;
     color: var(--accent);
+    white-space: nowrap;
   }
   .logo span { color: var(--text-muted); font-style: italic; font-weight: 400; }
 
-  .header-right { display: flex; align-items: center; gap: 10px; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
 
-  .theme-switcher { display: flex; gap: 5px; }
+  .rsvp-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; letter-spacing: 0.05em;
+    color: var(--text-muted); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 7px;
+  }
+
+  .theme-switcher { display: flex; gap: 4px; }
   .theme-btn {
-    width: 18px; height: 18px; border-radius: 50%;
+    width: 17px; height: 17px; border-radius: 50%;
     border: 2px solid var(--border); cursor: pointer;
     transition: border-color var(--tr);
   }
@@ -98,90 +106,61 @@
   .theme-btn.ocean  { background: #0c1b30; }
   .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(200,149,107,0.4); }
 
-  .font-controls { display: flex; gap: 5px; }
+  .font-controls { display: flex; gap: 4px; }
   .font-btn {
     background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); width: 28px; height: 28px;
-    border-radius: 7px; cursor: pointer; font-size: 0.8rem;
+    color: var(--text); width: 27px; height: 27px;
+    border-radius: 7px; cursor: pointer; font-size: 0.75rem;
     display: flex; align-items: center; justify-content: center;
   }
   .font-btn:active { background: var(--accent); color: #fff; }
 
-  /* ── PAGE SHELL ────────────────────────── */
-  /* Everything sits below fixed header */
-  /* This page runs inside an iframe (index.html). An explicit
-     overflow scroll container is the iOS-reliable pattern for
-     iframed content; position:fixed here is relative to the iframe
-     box. The real bottom-cutoff bug was index.html sizing the
-     iframe with 100vh (extends behind the Safari toolbar) — fixed
-     there with 100dvh. Safe-area padding keeps the last voice row
-     clear of the home indicator. */
-  .page {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    padding-top: var(--header-h);
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* ── PASTE STRIP ───────────────────────── */
+  /* ── PASTE / LIBRARY STRIP ─────────────── */
   .paste-strip {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 12px 16px;
-    flex-shrink: 0;
   }
   .paste-strip-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
-  .paste-strip-header.no-mb { margin-bottom: 0; }
   .paste-lbl {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--text-muted);
   }
-  .paste-right { display: flex; align-items: center; gap: 10px; }
   .text-meta {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem; color: var(--text-muted);
     display: flex; gap: 10px;
   }
-  .toggle-btn {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 8px;
-    padding: 6px 14px; font-size: 0.8rem;
-    font-family: 'Lora', serif; cursor: pointer;
-    transition: all var(--tr);
-  }
-  .toggle-btn:active { border-color: var(--accent); color: var(--accent); }
 
-  /* Always-visible quick-action row */
-  .quick-actions {
-    display: flex; gap: 8px; padding: 10px 16px 0;
+  .lib-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+  .lib-row:empty { display: none; }
+  .book-chip {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: 9px; padding: 7px 10px;
+    font-size: 0.8rem; cursor: pointer; max-width: 100%;
+    transition: border-color var(--tr);
   }
-  .qa-btn {
-    flex: 1; height: 44px;
-    background: var(--surface2);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text); font-size: 0.88rem;
-    font-family: 'Lora', serif;
-    cursor: pointer; display: flex; align-items: center;
-    justify-content: center; gap: 6px;
-    transition: border-color var(--tr), background var(--tr);
-    -webkit-appearance: none;
+  .book-chip.active { border-color: var(--accent); color: var(--accent); }
+  .chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+  .chip-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0;
   }
-  .qa-btn:active { border-color: var(--accent); background: var(--surface); }
-  .qa-btn.active-action { border-color: var(--accent); color: var(--accent); }
+  .chip-del {
+    color: var(--text-muted); font-size: 0.95rem; line-height: 1;
+    padding: 2px 3px; flex-shrink: 0;
+  }
+  .chip-del:active { color: #e05c5c; }
 
   .paste-body {
     overflow: hidden;
     transition: max-height 0.35s ease, opacity 0.25s ease;
-    max-height: 300px; opacity: 1;
+    max-height: 320px; opacity: 1;
   }
   .paste-body.hidden { max-height: 0; opacity: 0; pointer-events: none; }
 
@@ -209,19 +188,13 @@
   .load-btn:active { background: var(--accent2); }
 
   /* ── READER PANE ───────────────────────── */
-  /* Fixed height: ~65% of viewport, scrollable inside */
-  .reader-wrap {
-    flex-shrink: 0;
-    padding: 12px 16px 0;
-    background: var(--bg);
-  }
+  .reader-wrap { padding: 12px 16px 0; }
   #readerPane {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px 20px;
-    /* ~65% of viewport minus header and strip */
-    height: calc(65vh - var(--header-h));
+    height: 52dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     line-height: 1.85;
@@ -235,7 +208,7 @@
     text-align: center; padding: 40px 0;
     font-size: 0.95rem;
   }
-  .para { margin-bottom: 0.8em; }
+  .para { margin-bottom: 0.8em; white-space: pre-wrap; }
   .para:last-child { margin-bottom: 0; }
 
   .progress-track {
@@ -254,24 +227,33 @@
   .sentence { border-radius: 3px; }
   .sentence.active-sentence { background: var(--hl-sentence); }
 
-  /* ── CONTROLS BAR ──────────────────────── */
-  /* Sits directly below reader, always visible */
-  .controls-bar {
-    flex-shrink: 0;
-    padding: 10px 16px 4px;
-    background: var(--bg);
+  /* Quick actions */
+  .quick-actions { display: flex; gap: 8px; padding: 10px 16px 0; }
+  .qa-btn {
+    flex: 1; height: 44px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text); font-size: 0.88rem;
+    font-family: 'Lora', serif;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    transition: border-color var(--tr), background var(--tr);
+    -webkit-appearance: none;
   }
+  .qa-btn:active { border-color: var(--accent); background: var(--surface); }
+  .qa-btn.active-action { border-color: var(--accent); color: var(--accent); }
 
-  /* Playback row */
-  .playback-row {
-    display: flex; gap: 8px; margin-bottom: 10px;
-  }
+  /* ── CONTROLS BAR ──────────────────────── */
+  .controls-bar { padding: 10px 16px 4px; }
+
+  .playback-row { display: flex; gap: 8px; margin-bottom: 10px; }
   .pb-btn {
     flex: 1; height: 52px;
     border-radius: var(--radius);
     border: 1px solid var(--border);
     background: var(--surface2); color: var(--text);
-    font-size: 1.2rem; cursor: pointer;
+    font-size: 1.1rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background var(--tr);
     -webkit-appearance: none;
@@ -283,10 +265,8 @@
     font-size: 1.5rem;
   }
   .pb-btn.play-btn:active { background: var(--accent2); }
-  .pb-btn.restart-btn { font-size: 0.85rem; gap: 4px; flex: 1; }
   .pb-btn.play-btn.playing { background: #7a4828; border-color: #7a4828; }
 
-  /* Status */
   .status-row {
     display: flex; align-items: center; gap: 7px;
     margin-bottom: 10px;
@@ -301,12 +281,10 @@
   .status-dot.paused  { background: var(--accent); }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
 
-  /* Sliders */
   .sliders-row {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; margin-bottom: 10px;
   }
-  .slider-block {}
   .slider-lbl {
     display: flex; justify-content: space-between;
     font-family: 'JetBrains Mono', monospace;
@@ -328,11 +306,7 @@
   }
 
   /* ── VOICE SECTION ─────────────────────── */
-  .voice-section {
-    padding: 0 16px 16px;
-    background: var(--bg);
-    flex-shrink: 0;
-  }
+  .voice-section { padding: 0 16px 16px; }
   .voice-section-label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.62rem; letter-spacing: 0.1em;
@@ -341,10 +315,11 @@
     border-top: 1px solid var(--border);
   }
 
-  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .voice-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+  @media (max-width: 380px) { .voice-grid { grid-template-columns: 1fr 1fr; } }
   .voice-option {
     display: flex; align-items: center; gap: 8px;
-    padding: 10px 10px;
+    padding: 10px 9px;
     border-radius: 10px;
     border: 1.5px solid var(--border);
     background: var(--surface2);
@@ -357,6 +332,7 @@
     border-color: var(--accent);
     background: rgba(200,149,107,0.1);
   }
+  .voice-option.unavailable { opacity: 0.45; }
   .voice-avatar {
     width: 28px; height: 28px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -364,16 +340,17 @@
   }
   .voice-info { min-width: 0; }
   .voice-name { font-size: 0.82rem; font-weight: 500; color: var(--text); }
-  .voice-meta { font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .voice-tag {
     font-size: 0.55rem; font-family: 'JetBrains Mono', monospace;
-    padding: 1px 5px; border-radius: 4px;
-    background: var(--border); color: var(--text-muted);
+    padding: 1px 0; border-radius: 4px;
+    color: var(--text-muted);
     text-transform: uppercase; display: block; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-
-  /* Safe area for iOS home bar */
-  .bottom-safe { height: env(safe-area-inset-bottom, 12px); background: var(--bg); }
+  .voice-note {
+    font-size: 0.72rem; color: var(--text-muted);
+    font-style: italic; margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -387,549 +364,582 @@
       <button class="font-btn" onclick="changeFontSize(1)">A+</button>
     </div>
     <div class="theme-switcher">
-      <div class="theme-btn dark active" onclick="setTheme('dark',this)"></div>
-      <div class="theme-btn light"       onclick="setTheme('light',this)"></div>
-      <div class="theme-btn sepia"       onclick="setTheme('sepia',this)"></div>
-      <div class="theme-btn slate"       onclick="setTheme('slate',this)"></div>
-      <div class="theme-btn forest"      onclick="setTheme('forest',this)"></div>
-      <div class="theme-btn ocean"       onclick="setTheme('ocean',this)"></div>
+      <div class="theme-btn dark"   onclick="setTheme('dark',this)"></div>
+      <div class="theme-btn light"  onclick="setTheme('light',this)"></div>
+      <div class="theme-btn sepia"  onclick="setTheme('sepia',this)"></div>
+      <div class="theme-btn slate"  onclick="setTheme('slate',this)"></div>
+      <div class="theme-btn forest" onclick="setTheme('forest',this)"></div>
+      <div class="theme-btn ocean"  onclick="setTheme('ocean',this)"></div>
     </div>
+    <a class="rsvp-link" href="rsvp-reader.html?v=4">RSVP</a>
   </div>
 </header>
 
-<div class="page">
+<!-- LIBRARY + PASTE STRIP -->
+<div class="paste-strip" id="pasteStrip">
+  <div class="paste-strip-header">
+    <span class="paste-lbl">Library</span>
+    <div class="text-meta">
+      <span id="wordCount">0 words</span>
+      <span id="readTime">~0 min</span>
+    </div>
+  </div>
+  <div class="lib-row" id="libRow"></div>
+  <div class="paste-body" id="pasteBody">
+    <textarea id="textInput" placeholder="Paste your text here, then tap Load…" spellcheck="false"></textarea>
+    <button class="load-btn" onclick="loadText()">Load Text →</button>
+  </div>
+</div>
 
-  <!-- PASTE STRIP -->
-  <div class="paste-strip" id="pasteStrip">
-    <div class="paste-strip-header" id="pasteStripHeader">
-      <span class="paste-lbl">Paste text</span>
-      <div class="paste-right">
-        <div class="text-meta">
-          <span id="wordCount">0 words</span>
-          <span id="readTime">~0 min</span>
-        </div>
+<!-- READER PANE -->
+<div class="reader-wrap">
+  <div id="readerPane">
+    <div class="reader-empty">Pick a book above, or paste new text.</div>
+  </div>
+</div>
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="quick-actions">
+  <button class="qa-btn" id="editTextBtn" onclick="togglePaste()">✏️ Paste / Edit Text</button>
+</div>
+
+<!-- CONTROLS BAR -->
+<div class="controls-bar">
+
+  <div class="playback-row">
+    <button class="pb-btn" onclick="restartBook()" title="Restart">⟪</button>
+    <button class="pb-btn" onclick="skipSentence(-1)" title="Previous sentence">◀</button>
+    <button class="pb-btn play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+    <button class="pb-btn" onclick="skipSentence(1)" title="Next sentence">▶▶</button>
+  </div>
+
+  <div class="status-row">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Ready</span>
+  </div>
+
+  <div class="sliders-row">
+    <div class="slider-block">
+      <div class="slider-lbl">
+        <span>Speed</span><strong id="speedVal">1.0×</strong>
       </div>
+      <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1"
+             oninput="updateSpeedDisplay(this.value)" onchange="updateSpeedCommit(this.value)">
     </div>
-    <div class="paste-body" id="pasteBody">
-      <textarea id="textInput" placeholder="Paste your text here, then tap Load…" spellcheck="false"></textarea>
-      <button class="load-btn" onclick="loadText()">Load Text →</button>
-    </div>
-  </div>
-
-  <!-- READER PANE -->
-  <div class="reader-wrap">
-    <div id="readerPane">
-      <div class="reader-empty">Load text above to start reading.</div>
-    </div>
-  </div>
-  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-
-  <!-- Always-visible quick actions -->
-  <div class="quick-actions">
-    <button class="qa-btn" id="editTextBtn" onclick="togglePaste()">✏️ Edit Text</button>
-  </div>
-
-  <!-- CONTROLS BAR -->
-  <div class="controls-bar">
-
-    <!-- Restart + Play/Pause -->
-    <div class="playback-row">
-      <button class="pb-btn restart-btn" onclick="skipBack()">⟪ Restart</button>
-      <button class="pb-btn play-btn" id="playBtn" onclick="togglePlay()">▶</button>
-    </div>
-
-    <!-- Status -->
-    <div class="status-row">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Ready</span>
-    </div>
-
-    <!-- Speed + Position sliders -->
-    <div class="sliders-row">
-      <div class="slider-block">
-        <div class="slider-lbl">
-          <span>Speed</span><strong id="speedVal">1.0×</strong>
-        </div>
-        <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1"
-               oninput="updateSpeedDisplay(this.value)" onchange="updateSpeedCommit(this.value)">
+    <div class="slider-block">
+      <div class="slider-lbl">
+        <span>Position</span><strong id="posVal">0%</strong>
       </div>
-      <div class="slider-block">
-        <div class="slider-lbl">
-          <span>Position</span><strong id="posVal">0%</strong>
-        </div>
-        <input type="range" id="posSlider" min="0" max="100" step="1" value="0"
-               oninput="seekPositionDisplay(this.value)" onchange="seekPositionCommit(this.value)">
-      </div>
+      <input type="range" id="posSlider" min="0" max="100" step="1" value="0"
+             oninput="seekPositionDisplay(this.value)" onchange="seekPositionCommit(this.value)">
     </div>
-
   </div>
 
-  <!-- VOICE SECTION (always visible) -->
-  <div class="voice-section">
-    <div class="voice-section-label">Voice</div>
-    <div class="voice-grid" id="voiceGrid"></div>
-    <pre id="voiceDebug" style="display:none;white-space:pre-wrap;
-      font-family:'JetBrains Mono',monospace;font-size:0.62rem;
-      color:var(--text-muted);margin-top:14px;padding:10px;
-      border:1px solid var(--border);border-radius:8px;
-      background:var(--surface2);"></pre>
-  </div>
+</div>
 
-  <div class="bottom-safe"></div>
-</div><!-- .page -->
+<!-- VOICE SECTION -->
+<div class="voice-section">
+  <div class="voice-section-label">Voice</div>
+  <div class="voice-grid" id="voiceGrid"></div>
+  <div class="voice-note" id="voiceNote" style="display:none"></div>
+  <pre id="voiceDebug" style="display:none;white-space:pre-wrap;
+    font-family:'JetBrains Mono',monospace;font-size:0.62rem;
+    color:var(--text-muted);margin-top:14px;padding:10px;
+    border:1px solid var(--border);border-radius:8px;
+    background:var(--surface2);"></pre>
+</div>
 
 <script>
 // ════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════
-let sentences = [], allWords = [];
-let currentWordIdx = 0;
-let isPlaying = false;
-let utterance  = null;
-let selectedVoiceIdx = parseInt(localStorage.getItem('vox_voice') || '0', 10);
+// words[i] = { el, spoken, sentIdx, globalIdx, sentenceEl }
+// sentences[i] = { el, words: [wordObj…] }  — a "sentence" is a speech unit:
+// one real sentence, or a ≤MAX_UNIT_WORDS chunk of a run-on one.
+let words = [], sentences = [];
+let curWord = 0;
+let playing = false;
+let activeUtterance = null;
+let curBookId = null;
 let speechRate = parseFloat(localStorage.getItem('vox_speed') || '1.0');
 let fontSize   = parseInt(localStorage.getItem('vox_fontSize') || '17', 10);
 let currentTheme = localStorage.getItem('vox_theme') || 'dark';
 let synth = window.speechSynthesis;
-let allVoices = [], voiceProfiles = [];
-let pasteVisible  = true;
+let pasteVisible = true;
 let pendingRestartTimer = null;
 let posSliderActive = false;
 
+const MAX_UNIT_WORDS = 50;
+
 // iOS Web Speech needs a buffer after cancel() before a new utterance.
-// Desktop browsers don't — using the same delay makes voice switching feel laggy.
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const VOICE_SWITCH_DELAY = IS_IOS ? 300 : 40;
 
-// Shared helper: schedule a single delayed readFrom, clearing any pending one.
-// Prevents race conditions from rapid voice/speed/seek changes.
 function scheduleRestart(idx, delayMs) {
   if (pendingRestartTimer) clearTimeout(pendingRestartTimer);
   pendingRestartTimer = setTimeout(() => {
     pendingRestartTimer = null;
-    readFrom(idx);
+    speakFrom(idx);
   }, delayMs);
 }
-
-// A user-initiated stop must win any in-flight scheduled restart, otherwise
-// speech can resume on its own ~40-300ms after the user paused/stopped.
 function cancelPendingRestart() {
   if (pendingRestartTimer) { clearTimeout(pendingRestartTimer); pendingRestartTimer = null; }
 }
 
 // ════════════════════════════════════════
-// VOICE LOADING — iOS loads voices async,
-// retry until they arrive
+// VOICES — fixed 3-voice grid
 // ════════════════════════════════════════
-// Novelty/robot voices to exclude — not useful for reading prose
-const NOVELTY_VOICES = new Set([
-  'Albert','Bad News','Bahh','Bells','Boing','Bubbles','Cellos','Fred',
-  'Good News','Jester','Junior','Kathy','Organ','Ralph','Superstar',
-  'Trinoids','Whisper','Wobble','Zarvox'
-]);
-
-// Try to surface these first, in this order. They have to be DOWNLOADED
-// per device to exist at all (macOS: System Settings > Accessibility >
-// Spoken Content > System Voice > Manage Voices; iOS: Settings >
-// Accessibility > Spoken Content > Voices). When one isn't installed we
-// don't leave a near-empty grid — we backfill with other real (non-novelty)
-// American English voices so there's always a usable set of choices.
-// Add ?debug=1 to the URL to dump the full raw voice list the device exposes.
-const PREFERRED = ['Samantha','Aaron','Nicky'];
-const MAX_VOICES = 6;
-
-// Region code → human label for the sub-tag under each voice name
-const ACCENT_LABEL = {
-  US: 'American', GB: 'British', AU: 'Australian', IE: 'Irish',
-  IN: 'Indian', ZA: 'South African', CA: 'Canadian', NZ: 'New Zealand',
-};
-
-// Gender hints for known voices (everything else falls back to ♂)
-const FEMALE_VOICES = new Set([
-  'Samantha','Martha','Nicky','Flo','Sandy','Shelley','Grandma',
-  'Ava','Karen','Catherine','Kate','Moira','Serena','Tessa','Victoria','Zoe',
-  'Google UK English Female'
-]);
-
-// Colour palette cycled across the grid
-const VOICE_PALETTE = [
-  { color: '#4f9de8', bg: '#1a3050' },
-  { color: '#e87cb0', bg: '#4a1e35' },
-  { color: '#6dbf7c', bg: '#1a3828' },
-  { color: '#d4a26a', bg: '#3d2a14' },
-  { color: '#a07cd4', bg: '#2a1a40' },
-  { color: '#e8c46a', bg: '#3d3214' },
+// The grid ALWAYS shows these three. Whether each is selectable depends on
+// what this device's OS exposes to the browser (it differs per device and
+// can't be changed from JS): iOS hides Nicky/Aaron from ALL web apps;
+// current macOS doesn't ship Aaron at all. Add ?debug=1 to dump raw voices.
+const PREFERRED = [
+  { name: 'Nicky',    gender: '♀', color: '#e87cb0', bg: '#4a1e35' },
+  { name: 'Samantha', gender: '♀', color: '#4f9de8', bg: '#1a3050' },
+  { name: 'Aaron',    gender: '♂', color: '#6dbf7c', bg: '#1a3828' },
 ];
+let voiceMap = {};   // name -> best matching SpeechSynthesisVoice
+let selectedVoiceName = localStorage.getItem('vox_voice_name') || '';
 
-function buildVoiceProfiles() {
-  allVoices = synth.getVoices();
-  if (!allVoices.length) return false;
+function voiceQuality(v) {
+  const s = (v.voiceURI + ' ' + v.name).toLowerCase();
+  if (s.includes('premium'))  return 3;
+  if (s.includes('enhanced')) return 2;
+  return 1;
+}
 
-  // Diagnostic: ?debug=1 dumps every voice iOS hands to Safari so we
-  // can confirm whether Nicky appears once downloaded on the device.
+function refreshVoices() {
+  const all = synth.getVoices();
+  if (!all.length) return false;
+
   if (/[?&]debug/.test(location.search)) {
     const dbg = document.getElementById('voiceDebug');
-    if (dbg) {
-      dbg.style.display = 'block';
-      dbg.textContent =
-        `RAW VOICES EXPOSED (${allVoices.length}):\n` +
-        allVoices.map(v =>
-          `• ${v.name} | ${v.lang} | local:${v.localService}`).join('\n');
-    }
+    dbg.style.display = 'block';
+    dbg.textContent = `RAW VOICES EXPOSED (${all.length}):\n` +
+      all.map(v => `• ${v.name} | ${v.lang} | local:${v.localService}`).join('\n');
   }
 
-  const baseName = v => v.name.split(' (')[0];
-  const isEng = v => /^en/i.test(v.lang);
-  const isUS  = v => /en[-_]US/i.test(v.lang);
-
-  // Show ONLY the preferred voices the device actually has, in PREFERRED order.
-  // (Samantha + Nicky on the user's Mac today; Aaron auto-appears if macOS ever
-  // ships/reinstalls it, since it's still in PREFERRED.)
-  const preferred = [];
-  PREFERRED.forEach(name => {
-    allVoices.filter(v => baseName(v) === name).forEach(v => preferred.push(v));
+  voiceMap = {};
+  PREFERRED.forEach(p => {
+    const matches = all.filter(v => v.name.split(' (')[0] === p.name && /^en/i.test(v.lang));
+    if (matches.length) {
+      matches.sort((a, b) => voiceQuality(b) - voiceQuality(a));
+      voiceMap[p.name] = matches[0];
+    }
   });
-  // Safety net ONLY: if the device exposes none of the preferred voices, fall
-  // back to real (non-novelty) English voices so the grid is never empty.
-  const backfill = preferred.length ? [] : [
-    ...allVoices.filter(v => isUS(v)  && !NOVELTY_VOICES.has(baseName(v))),
-    ...allVoices.filter(v => isEng(v) && !isUS(v) && !NOVELTY_VOICES.has(baseName(v))),
-  ];
-  const candidates = [...preferred, ...backfill];
 
-  // De-dupe by base name (iOS lists compact + enhanced separately)
-  // then cap the grid to MAX_VOICES.
-  const seen = new Set();
-  voiceProfiles = candidates
-    .filter(v => {
-      const base = baseName(v);
-      if (seen.has(base)) return false;
-      seen.add(base);
-      return true;
-    })
-    .slice(0, MAX_VOICES)
-    .map((v, i) => {
-      const base = baseName(v);
-      const region = (v.lang.split(/[-_]/)[1] || 'US').toUpperCase();
-      return {
-        name: `${base} (${region})`,
-        gender: FEMALE_VOICES.has(base) ? '♀' : '♂',
-        accent: region,
-        ...VOICE_PALETTE[i % VOICE_PALETTE.length],
-        voice: v,
-      };
-    });
-
-  // Bounds-check persisted voice index (voice list may have shrunk)
-  if (selectedVoiceIdx >= voiceProfiles.length || selectedVoiceIdx < 0) {
-    selectedVoiceIdx = 0;
+  if (!voiceMap[selectedVoiceName]) {
+    selectedVoiceName = PREFERRED.map(p => p.name).find(n => voiceMap[n]) || '';
   }
   renderVoiceGrid();
   return true;
 }
 
 function initVoices() {
-  if (buildVoiceProfiles()) return;
-  // iOS fires onvoiceschanged, Android/Chrome too
-  synth.onvoiceschanged = () => { buildVoiceProfiles(); };
-  // Fallback poll for up to 3 seconds
+  if (refreshVoices()) return;
+  synth.onvoiceschanged = () => { refreshVoices(); };
   let tries = 0;
   const poll = setInterval(() => {
-    if (buildVoiceProfiles() || ++tries > 15) clearInterval(poll);
+    if (refreshVoices() || ++tries > 15) clearInterval(poll);
   }, 200);
 }
 
-initVoices();
+function unavailReason(name) {
+  if (IS_IOS) return 'iPhone hides it from web apps';
+  if (name === 'Aaron') return 'macOS no longer offers it';
+  return 'Not installed on this Mac';
+}
+function unavailDetail(name) {
+  if (IS_IOS) return name + ' works in iOS Speak Selection, but Apple blocks it for ALL web apps. Use Samantha here, or Speak Selection in Obsidian for ' + name + '.';
+  if (name === 'Aaron') return 'Aaron was removed from macOS — System Settings has nothing to download. It returns automatically if Apple ever ships it again.';
+  return name + ': download it in System Settings → Accessibility → Spoken Content → Manage Voices, then fully restart the browser.';
+}
 
 function renderVoiceGrid() {
   const grid = document.getElementById('voiceGrid');
   grid.innerHTML = '';
-  voiceProfiles.forEach((vp, i) => {
+  let anyAvailable = false;
+  PREFERRED.forEach(p => {
+    const available = !!voiceMap[p.name];
+    if (available) anyAvailable = true;
     const div = document.createElement('div');
-    div.className = 'voice-option' + (i === selectedVoiceIdx ? ' selected' : '');
-    div.setAttribute('data-idx', i);
+    div.className = 'voice-option'
+      + (available ? '' : ' unavailable')
+      + (p.name === selectedVoiceName ? ' selected' : '');
     div.innerHTML = `
-      <div class="voice-avatar" style="background:${vp.bg};color:${vp.color}">${vp.gender}</div>
+      <div class="voice-avatar" style="background:${p.bg};color:${p.color}">${p.gender}</div>
       <div class="voice-info">
-        <div class="voice-name">${vp.name}</div>
-        <span class="voice-tag">${ACCENT_LABEL[vp.accent] || vp.accent}</span>
+        <div class="voice-name">${p.name}</div>
+        <span class="voice-tag">${available ? 'Ready' : unavailReason(p.name)}</span>
       </div>`;
-    div.addEventListener('click', () => selectVoice(i));
+    div.addEventListener('click', () => selectVoice(p.name));
     grid.appendChild(div);
   });
-}
-
-function selectVoice(idx) {
-  selectedVoiceIdx = idx;
-  try { localStorage.setItem('vox_voice', idx); } catch(e) {}
-  // Update UI immediately
-  document.querySelectorAll('.voice-option').forEach((el, i) => {
-    el.classList.toggle('selected', i === idx);
-  });
-  // If currently playing: stop cleanly, then restart from same word with new voice
-  if (isPlaying) {
-    const resumeIdx = currentWordIdx;
-    synth.cancel();           // hard cancel
-    isPlaying = false;
-    // Small delay so iOS Web Speech has time to fully reset before new utterance
-    scheduleRestart(resumeIdx, VOICE_SWITCH_DELAY);
-  }
-}
-
-// ════════════════════════════════════════
-// PASTE TOGGLE
-// ════════════════════════════════════════
-function togglePaste() {
-  pasteVisible = !pasteVisible;
-  document.getElementById('pasteBody').classList.toggle('hidden', !pasteVisible);
-  document.getElementById('editTextBtn').classList.toggle('active-action', pasteVisible);
-  if (pasteVisible) {
-    document.getElementById('pasteStrip').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Focus textarea after animation so user can paste immediately
-    setTimeout(() => document.getElementById('textInput').focus(), 350);
-  }
-}
-
-// ════════════════════════════════════════
-// TEXT META
-// ════════════════════════════════════════
-document.getElementById('textInput').addEventListener('input', updateMeta);
-function updateMeta() {
-  const text = document.getElementById('textInput').value.trim();
-  const wc = text ? text.split(/\s+/).filter(Boolean).length : 0;
-  document.getElementById('wordCount').textContent = wc.toLocaleString() + ' words';
-  updateReadTime();
-}
-
-function updateReadTime() {
-  let wc;
-  if (allWords.length) {
-    wc = Math.max(allWords.length - currentWordIdx, 0);
+  const note = document.getElementById('voiceNote');
+  if (!anyAvailable) {
+    note.style.display = 'block';
+    note.textContent = 'None of your 3 voices exist on this device — using the system default voice.';
   } else {
-    const text = document.getElementById('textInput').value.trim();
-    wc = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    note.style.display = 'none';
   }
-  const mins = Math.ceil(wc / (200 * speechRate));
-  document.getElementById('readTime').textContent = '~' + mins + ' min';
+}
+
+function selectVoice(name) {
+  if (!voiceMap[name]) {
+    setStatus(unavailDetail(name), '');
+    return;
+  }
+  selectedVoiceName = name;
+  try { localStorage.setItem('vox_voice_name', name); } catch (e) {}
+  renderVoiceGrid();
+  if (playing) {
+    const g = curWord;
+    activeUtterance = null;
+    synth.cancel();
+    playing = false;
+    scheduleRestart(g, VOICE_SWITCH_DELAY);
+  }
+}
+
+function getSelectedVoice() { return voiceMap[selectedVoiceName] || null; }
+
+initVoices();
+
+// ════════════════════════════════════════
+// LIBRARY — books persisted in localStorage
+// ════════════════════════════════════════
+function getBooks() {
+  try { return JSON.parse(localStorage.getItem('vox_books') || '[]'); }
+  catch (e) { return []; }
+}
+function saveBooks(books) {
+  try { localStorage.setItem('vox_books', JSON.stringify(books)); }
+  catch (e) { setStatus('Storage full — book may not be saved', ''); }
+}
+function getPos(id) {
+  return parseInt(localStorage.getItem('vox_pos_' + id) || '0', 10);
+}
+function savePos() {
+  if (!curBookId) return;
+  try { localStorage.setItem('vox_pos_' + curBookId, curWord); } catch (e) {}
+}
+function makeTitle(text) {
+  const line = text.split('\n').find(l => l.trim()) || 'Untitled';
+  return line.replace(/[#*_`>\[\]|]/g, '').trim().slice(0, 42) || 'Untitled';
+}
+
+function renderLibrary() {
+  const row = document.getElementById('libRow');
+  row.innerHTML = '';
+  getBooks().forEach(b => {
+    const total = b.words || 1;
+    const pct = Math.min(100, Math.round((getPos(b.id) / total) * 100));
+    const chip = document.createElement('div');
+    chip.className = 'book-chip' + (b.id === curBookId ? ' active' : '');
+    chip.innerHTML = `
+      <span class="chip-title"></span>
+      <span class="chip-pct">${pct}%</span>
+      <span class="chip-del">✕</span>`;
+    chip.querySelector('.chip-title').textContent = b.title;
+    chip.addEventListener('click', () => openBook(b.id));
+    chip.querySelector('.chip-del').addEventListener('click', (ev) => deleteBook(b.id, ev));
+    row.appendChild(chip);
+  });
+}
+
+function deleteBook(id, ev) {
+  ev.stopPropagation();
+  const book = getBooks().find(b => b.id === id);
+  if (!confirm('Delete "' + (book ? book.title : 'this book') + '" from the library?')) return;
+  saveBooks(getBooks().filter(b => b.id !== id));
+  try { localStorage.removeItem('vox_pos_' + id); } catch (e) {}
+  if (curBookId === id) {
+    curBookId = null;
+    try { localStorage.removeItem('vox_last_book'); } catch (e) {}
+  }
+  renderLibrary();
+}
+
+// "Load Text" button: save paste as a book (deduped) and open it.
+function loadText() {
+  const raw = document.getElementById('textInput').value;
+  if (!raw.trim()) return;
+  const books = getBooks();
+  let book = books.find(b => b.text === raw);
+  if (!book) {
+    book = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      title: makeTitle(raw),
+      text: raw,
+      words: 0,
+      added: Date.now(),
+    };
+    books.unshift(book);
+  }
+  curBookId = book.id;  // set before buildReader so word count can be stored
+  buildReader(book.text);
+  book.words = words.length;
+  saveBooks(books);
+  finishOpen(book, 0);
+}
+
+function openBook(id) {
+  const book = getBooks().find(b => b.id === id);
+  if (!book) return;
+  stopReading();
+  curBookId = id;
+  document.getElementById('textInput').value = book.text;
+  buildReader(book.text);
+  const pos = getPos(id);
+  finishOpen(book, (pos >= 0 && pos < words.length) ? pos : 0);
+}
+
+function finishOpen(book, startWord) {
+  try { localStorage.setItem('vox_last_book', book.id); } catch (e) {}
+  curWord = startWord;
+  if (words.length) {
+    highlightWord(curWord);
+    scrollToCurrent();
+  }
+  updatePositionSlider(); updateProgress(); updateReadTime(); updateMeta();
+  renderLibrary();
+  if (pasteVisible) togglePaste();   // collapse paste area
+  const pct = words.length ? Math.round((curWord / Math.max(words.length - 1, 1)) * 100) : 0;
+  setStatus(curWord > 0 ? 'Resumed "' + book.title + '" at ' + pct + '%' : 'Loaded "' + book.title + '"', '');
 }
 
 // ════════════════════════════════════════
-// LOAD TEXT
+// TEXT → READER DOM (verbatim — the pane
+// shows EXACTLY the pasted text; nothing
+// is stripped or altered for display)
 // ════════════════════════════════════════
-// Strip common Markdown so syntax isn't read aloud and link URLs don't
-// blow up the tokenizer. Paragraph breaks (blank lines) are preserved.
-function stripMarkdown(text) {
-  return text
-    .replace(/```[\s\S]*?```/g, ' ')              // fenced code blocks
-    .replace(/`([^`]+)`/g, '$1')                  // inline code
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')     // images -> alt text
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')      // links -> link text
-    .replace(/^\s{0,3}#{1,6}\s+/gm, '')           // # headings
-    .replace(/^\s{0,3}>\s?/gm, '')                // > blockquotes
-    .replace(/^\s{0,3}[-*+]\s+/gm, '')            // - bullet lists
-    .replace(/^\s{0,3}\d+\.\s+/gm, '')            // 1. numbered lists
-    .replace(/^\s{0,3}([-*_]\s*){3,}$/gm, '')     // --- horizontal rules
-    .replace(/\*\*([^*]+)\*\*/g, '$1')            // **bold**
-    .replace(/__([^_]+)__/g, '$1')                // __bold__
-    .replace(/\*([^*]+)\*/g, '$1')                // *italic*
-    .replace(/~~([^~]+)~~/g, '$1')                // ~~strikethrough~~
-    .replace(/\|/g, ' ');                         // table pipes
-}
-
-function tokenize(text) {
-  // Protect common abbreviations + decimals so their periods don't split sentences
+// Sentence split that keeps every character: pieces concatenate back to the
+// original paragraph. Abbreviations + decimals protected from splitting.
+function splitSentences(text) {
   const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|est|fig|govt|incl|no|Vol|vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi;
   const safe = text.replace(abbrevPat, m => m.slice(0, -1) + '\x00')
-                    .replace(/(\d)\.(\d)/g, '$1\x00$2');
-  // Split AFTER every run of sentence terminators (plus trailing quotes/brackets),
-  // regardless of what follows. Unlike a single match() regex, this never silently
-  // drops a sentence whose terminator isn't followed by a space (run-ons, URLs).
-  return safe.replace(/([.!?…]+["'»‘’“”)\]]*)/g, '$1\x01')
+                   .replace(/(\d)\.(\d)/g, '$1\x00$2');
+  return safe.replace(/([.!?…]+["'»‘’“”)\]]*)(\s+|$)/g, '$1$2\x01')
              .split('\x01')
-             .map(s => s.trim().replace(/\x00/g, '.'))
-             .filter(Boolean);
+             .map(s => s.replace(/\x00/g, '.'))
+             .filter(s => s.length);
 }
 
-function loadText() {
-  const raw = document.getElementById('textInput').value.trim();
-  if (!raw) return;
+// What gets SPOKEN for a displayed word: markdown decoration characters are
+// silently skipped in speech only. Display is never modified.
+function spokenForm(tok) {
+  return tok.replace(/[*_`#>|~\[\]()]/g, '').trim();
+}
 
+function buildReader(text) {
   stopReading();
-  currentWordIdx = 0;
-  sentences = [];
-
   const pane = document.getElementById('readerPane');
   pane.innerHTML = '';
-  allWords = [];
+  words = []; sentences = [];
+  curWord = 0;
 
   const hasWordChar = /[\p{L}\p{N}]/u;
-  const paragraphs = stripMarkdown(raw).split(/\n\s*\n/).filter(p => p.trim());
+  const units = [];
+  const paras = text.split(/\n\s*\n/).filter(p => p.trim());
 
-  paragraphs.forEach((para) => {
-    const paraText = para.trim().replace(/\n/g, ' ');
+  paras.forEach(para => {
     const paraDiv = document.createElement('div');
     paraDiv.className = 'para';
 
-    const paraSentences = tokenize(paraText);
-    sentences.push(...paraSentences);
+    splitSentences(para).forEach(piece => {
+      let unit = { el: document.createElement('span'), words: [] };
+      unit.el.className = 'sentence';
+      paraDiv.appendChild(unit.el);
+      units.push(unit);
 
-    paraSentences.forEach((sent, sIdx) => {
-      const sSpan = document.createElement('span');
-      sSpan.className = 'sentence';
-      sent.split(/(\s+)/).forEach(tok => {
+      piece.split(/(\s+)/).forEach(tok => {
+        if (!tok) return;
         if (/^\s+$/.test(tok)) {
-          sSpan.appendChild(document.createTextNode(tok));
-        } else if (tok) {
-          if (hasWordChar.test(tok)) {
-            const w = document.createElement('span');
-            w.className = 'word';
-            w.textContent = tok;
-            const wIdx = allWords.length;
-            w.addEventListener('click', () => seekToWord(wIdx));
-            allWords.push({ el: w, sentenceEl: sSpan, paraEnd: false });
-            sSpan.appendChild(w);
-          } else {
-            sSpan.appendChild(document.createTextNode(tok));
-          }
+          unit.el.appendChild(document.createTextNode(tok));
+          return;
+        }
+        // Cap unit length so a run-on "sentence" never becomes a giant utterance
+        if (unit.words.length >= MAX_UNIT_WORDS) {
+          unit = { el: document.createElement('span'), words: [] };
+          unit.el.className = 'sentence';
+          paraDiv.appendChild(unit.el);
+          units.push(unit);
+        }
+        if (hasWordChar.test(tok)) {
+          const w = document.createElement('span');
+          w.className = 'word';
+          w.textContent = tok;
+          const obj = {
+            el: w,
+            spoken: spokenForm(tok),
+            sentIdx: 0,
+            globalIdx: words.length,
+            sentenceEl: null,
+          };
+          w.addEventListener('click', () => seekToWord(obj.globalIdx));
+          unit.words.push(obj);
+          words.push(obj);
+          unit.el.appendChild(w);
+        } else {
+          unit.el.appendChild(document.createTextNode(tok));
         }
       });
-      paraDiv.appendChild(sSpan);
-      if (sIdx < paraSentences.length - 1) paraDiv.appendChild(document.createTextNode(' '));
     });
 
-    if (allWords.length > 0) allWords[allWords.length - 1].paraEnd = true;
     pane.appendChild(paraDiv);
   });
 
-  try { localStorage.setItem('vox_text', raw); } catch(e) {}
+  sentences = units.filter(u => u.words.length);
+  sentences.forEach((s, i) => s.words.forEach(w => { w.sentIdx = i; w.sentenceEl = s.el; }));
 
-  updatePositionSlider();
-  setStatus('Ready', '');
-  updateProgress();
-  updateReadTime();
-  pasteVisible = true;
-  togglePaste();
   pane.scrollTop = 0;
+  if (!words.length) {
+    pane.innerHTML = '<div class="reader-empty">No readable words found in that text.</div>';
+  }
 }
 
 // ════════════════════════════════════════
-// PLAYBACK
+// PLAYBACK — sentence queue. Each sentence
+// is its own short utterance; onend chains
+// to the next. Short utterances = reliable
+// boundaries, clean pause, no mid-text
+// engine death on long documents.
 // ════════════════════════════════════════
 function togglePlay() {
-  if (!allWords.length) { loadText(); if (!allWords.length) return; }
-  if (isPlaying) { pauseReading(); return; }
-  // After a chapter finishes, currentWordIdx sits at allWords.length, which would
-  // make readFrom() speak an empty string and silently bounce to 'Ready'. Treat a
-  // Play tap from the end as a request to replay from the top.
-  const startIdx = currentWordIdx >= allWords.length ? 0 : currentWordIdx;
-  readFrom(startIdx);
+  if (!words.length) { loadText(); if (!words.length) return; }
+  if (playing) { pauseReading(); return; }
+  const start = curWord >= words.length ? 0 : curWord;
+  speakFrom(start);
 }
 
-function readFrom(wordIdx) {
-  if (!allWords.length) return;
-  // Only cancel if something is already queued/speaking (avoids disrupting cold start on iOS)
-  if (synth.speaking || synth.pending) synth.cancel();
-
-  const wordsToRead = allWords.slice(wordIdx).map((w, i, arr) => {
-    let text = w.el.textContent;
-    if (w.paraEnd && i < arr.length - 1 && !/[.!?…]/.test(text.slice(-1))) text += '.';
-    return text;
-  }).join(' ');
-  if (!wordsToRead.trim()) { stopReading(); return; }
-
-  utterance = new SpeechSynthesisUtterance(wordsToRead);
-  utterance.rate = speechRate;
-  utterance.lang = 'en-US'; // explicit lang helps iOS pick right engine
-
-  // Apply selected voice — must re-fetch from current voiceProfiles in case it changed
-  const vp = voiceProfiles[selectedVoiceIdx];
-  if (vp && vp.voice) {
-    utterance.voice = vp.voice;
-    utterance.lang  = vp.voice.lang;
-  }
-
-  currentWordIdx = wordIdx;
-  isPlaying = true;
+function speakFrom(g) {
+  if (!words.length) return;
+  g = Math.max(0, Math.min(g, words.length - 1));
+  cancelPendingRestart();
+  if (synth.speaking || synth.pending) { activeUtterance = null; synth.cancel(); }
+  playing = true;
   setPlayBtn(true);
   setStatus('Playing…', 'playing');
-  highlightWord(currentWordIdx);
+  setCurrentWord(g);
+  speakUnit(g);
+}
 
-  utterance.onboundary = (e) => {
+function speakUnit(g) {
+  const sIdx = words[g].sentIdx;
+  const sent = sentences[sIdx];
+  // Words of this unit from g onward that have something speakable
+  const chunk = sent.words.filter(w => w.globalIdx >= g && w.spoken);
+  if (!chunk.length) { advanceFrom(sIdx); return; }
+
+  const text = chunk.map(w => w.spoken).join(' ');
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = speechRate;
+  const v = getSelectedVoice();
+  if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-US'; }
+
+  u.onboundary = (e) => {
     if (e.name !== 'word') return;
-    // charIndex is the position of the FIRST char of the current word.
-    // Count words that appear fully before it to get the current word's index.
-    const before = wordsToRead.substring(0, e.charIndex);
-    const count  = before.trim() ? before.trim().split(/\s+/).length : 0;
-    const newIdx = Math.min(wordIdx + count, allWords.length - 1);
-    if (newIdx !== currentWordIdx) {
-      currentWordIdx = newIdx;
-      highlightWord(currentWordIdx);
-      updatePositionSlider();
-      updateProgress();
-      updateReadTime();
-    }
+    const before = text.slice(0, e.charIndex);
+    const n = before.trim() ? before.trim().split(/\s+/).length : 0;
+    const w = chunk[Math.min(n, chunk.length - 1)];
+    if (w.globalIdx !== curWord) setCurrentWord(w.globalIdx);
   };
-
-  utterance.onend = () => {
-    clearHighlights();
-    isPlaying = false;
-    setPlayBtn(false);
-    setStatus('Finished', '');
-    currentWordIdx = allWords.length;
-    updateProgress(100);
-    updateReadTime();
+  u.onend = () => {
+    // Stale events from cancelled utterances must not advance playback
+    if (u !== activeUtterance || !playing) return;
+    activeUtterance = null;
+    advanceFrom(sIdx);
   };
-
-  utterance.onerror = (e) => {
-    // 'canceled' is normal on iOS when we cancel to switch voice — ignore it
+  u.onerror = (e) => {
     if (e.error === 'canceled' || e.error === 'interrupted') return;
-    isPlaying = false;
+    if (u !== activeUtterance) return;
+    activeUtterance = null;
+    playing = false;
     setPlayBtn(false);
-    setStatus('Ready', '');
+    setStatus('Speech error (' + (e.error || 'unknown') + ') — tap play to continue', '');
+    savePos();
   };
 
-  synth.speak(utterance);
+  activeUtterance = u;
+  synth.speak(u);
+}
+
+function advanceFrom(sIdx) {
+  if (!playing) return;
+  const next = sentences[sIdx + 1];
+  if (!next) { finishedReading(); return; }
+  const g = next.words[0].globalIdx;
+  setCurrentWord(g);
+  speakUnit(g);
+}
+
+function finishedReading() {
+  playing = false;
+  activeUtterance = null;
+  curWord = words.length;
+  clearHighlights();
+  setPlayBtn(false);
+  setStatus('Finished', '');
+  updateProgress(100);
+  updateReadTime();
+  savePos();
 }
 
 function pauseReading() {
-  // On iOS, synth.pause() is unreliable — use cancel instead.
-  // togglePlay → readFrom(currentWordIdx) resumes cleanly from the right word.
   cancelPendingRestart();
+  activeUtterance = null;
   synth.cancel();
-  isPlaying = false;
+  playing = false;
   setPlayBtn(false);
   setStatus('Paused', 'paused');
+  savePos();
 }
 
 function stopReading(resetHL = true) {
   cancelPendingRestart();
+  activeUtterance = null;
   synth.cancel();
-  isPlaying = false;
+  playing = false;
   if (resetHL) clearHighlights();
   setPlayBtn(false);
   setStatus('Ready', '');
 }
 
-function skipBack() {
-  stopReading();
-  currentWordIdx = 0;
-  updatePositionSlider(); updateProgress(); updateReadTime();
-  if (allWords.length) highlightWord(0);
+function restartBook() {
+  if (!words.length) return;
+  seekToWord(0);
   document.getElementById('readerPane').scrollTop = 0;
 }
 
+function skipSentence(dir) {
+  if (!words.length) return;
+  const atEnd = curWord >= words.length;
+  let sIdx = atEnd ? sentences.length - 1 : words[curWord].sentIdx;
+  const sentStart = sentences[sIdx].words[0].globalIdx;
+  // Back from mid-sentence goes to the start of the CURRENT sentence first
+  if (!(dir < 0 && !atEnd && curWord > sentStart)) {
+    sIdx = Math.max(0, Math.min(sentences.length - 1, sIdx + dir));
+  }
+  seekToWord(sentences[sIdx].words[0].globalIdx);
+}
+
 // ════════════════════════════════════════
-// HIGHLIGHT + SCROLL (inside reader pane)
+// HIGHLIGHT + POSITION
 // ════════════════════════════════════════
+function setCurrentWord(g) {
+  curWord = g;
+  highlightWord(g);
+  updatePositionSlider(); updateProgress(); updateReadTime();
+  if (curBookId && g % 10 === 0) savePos();
+}
+
 function highlightWord(idx) {
-  if (!allWords[idx]) return;
-  const { el, sentenceEl } = allWords[idx];
+  if (!words[idx]) return;
+  const { el, sentenceEl } = words[idx];
   clearHighlights();
   el.classList.add('active-word');
   sentenceEl.classList.add('active-sentence');
-  // Only scroll when the active word is near or past the pane edges.
-  // Avoids thrashing on every boundary event at fast speeds.
   const pane = document.getElementById('readerPane');
   const elTop = el.offsetTop;
   const elBot = elTop + el.offsetHeight;
@@ -941,96 +951,142 @@ function highlightWord(idx) {
   }
 }
 
+function scrollToCurrent() {
+  const w = words[Math.min(curWord, words.length - 1)];
+  if (!w) return;
+  const pane = document.getElementById('readerPane');
+  pane.scrollTop = Math.max(0, w.el.offsetTop - pane.clientHeight * 0.3);
+}
+
 function clearHighlights() {
   document.querySelectorAll('.sentence.active-sentence').forEach(s => s.classList.remove('active-sentence'));
   document.querySelectorAll('.word.active-word').forEach(w => w.classList.remove('active-word'));
 }
 
-// ════════════════════════════════════════
-// SEEK
-// ════════════════════════════════════════
-function seekToWord(wIdx) {
-  const was = isPlaying;
-  synth.cancel();
-  isPlaying = false;
-  currentWordIdx = wIdx;
-  highlightWord(wIdx);
-  updatePositionSlider(); updateProgress(); updateReadTime();
-  if (was) scheduleRestart(wIdx, 150);
+function seekToWord(g) {
+  if (!words.length) return;
+  g = Math.max(0, Math.min(g, words.length - 1));
+  const was = playing;
+  if (was) {
+    cancelPendingRestart();
+    activeUtterance = null;
+    synth.cancel();
+    playing = false;
+  }
+  setCurrentWord(g);
+  savePos();
+  if (was) scheduleRestart(g, 150);
 }
 
-// Cheap label-only update while dragging position slider.
 function seekPositionDisplay(pct) {
   document.getElementById('posVal').textContent = Math.round(pct) + '%';
 }
-// Commit the seek on drag release (change event), not every pixel (input event).
 function seekPositionCommit(pct) {
-  if (!allWords.length) return;
-  const idx = Math.round((pct / 100) * (allWords.length - 1));
-  seekToWord(idx);
+  if (!words.length) return;
+  seekToWord(Math.round((pct / 100) * (words.length - 1)));
 }
 
 function updatePositionSlider() {
-  // Skip auto-updates while the user is actively dragging the slider.
-  if (!allWords.length || posSliderActive) return;
-  const pct = (currentWordIdx / Math.max(allWords.length - 1, 1)) * 100;
+  if (!words.length || posSliderActive) return;
+  const pct = (Math.min(curWord, words.length) / Math.max(words.length - 1, 1)) * 100;
   document.getElementById('posSlider').value = pct;
-  document.getElementById('posVal').textContent = Math.round(pct) + '%';
+  document.getElementById('posVal').textContent = Math.round(Math.min(pct, 100)) + '%';
 }
 
 function updateProgress(force) {
   const pct = force !== undefined ? force
-    : allWords.length ? (currentWordIdx / Math.max(allWords.length - 1, 1)) * 100 : 0;
+    : words.length ? (Math.min(curWord, words.length) / Math.max(words.length - 1, 1)) * 100 : 0;
   document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
 }
 
 // ════════════════════════════════════════
-// SPEED
+// META / READ TIME
+// ════════════════════════════════════════
+document.getElementById('textInput').addEventListener('input', () => {
+  updateMeta();
+  const v = document.getElementById('textInput').value;
+  try { localStorage.setItem('vox_text', v); } catch (e) {}
+});
+
+function updateMeta() {
+  const wc = words.length ||
+    (document.getElementById('textInput').value.trim()
+      ? document.getElementById('textInput').value.trim().split(/\s+/).length : 0);
+  document.getElementById('wordCount').textContent = wc.toLocaleString() + ' words';
+  updateReadTime();
+}
+
+function updateReadTime() {
+  let wc;
+  if (words.length) {
+    wc = Math.max(words.length - curWord, 0);
+  } else {
+    const t = document.getElementById('textInput').value.trim();
+    wc = t ? t.split(/\s+/).length : 0;
+  }
+  const mins = Math.ceil(wc / (200 * speechRate));
+  document.getElementById('readTime').textContent = '~' + mins + ' min';
+}
+
+// ════════════════════════════════════════
+// SPEED / FONT / THEME / STATUS / PASTE
 // ════════════════════════════════════════
 function applySpeedGradient(val) {
   const pct = ((val - 0.5) / 2.5) * 100;
   document.getElementById('speedSlider').style.background =
     `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--border) ${pct}%, var(--border) 100%)`;
 }
-
-// Cheap label + gradient update while dragging (no speech restart).
 function updateSpeedDisplay(val) {
   speechRate = parseFloat(val);
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(val);
   updateReadTime();
 }
-// Commit the speed change on drag release (change event), not every pixel.
 function updateSpeedCommit(val) {
   speechRate = parseFloat(val);
-  try { localStorage.setItem('vox_speed', speechRate); } catch(e) {}
-  if (isPlaying) {
+  try { localStorage.setItem('vox_speed', speechRate); } catch (e) {}
+  if (playing) {
+    const g = curWord;
+    activeUtterance = null;
     synth.cancel();
-    isPlaying = false;
-    scheduleRestart(currentWordIdx, 150);
+    playing = false;
+    scheduleRestart(g, 150);
   }
 }
 
-// ════════════════════════════════════════
-// FONT SIZE
-// ════════════════════════════════════════
 function changeFontSize(delta) {
   fontSize = Math.max(12, Math.min(30, fontSize + delta));
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
-  try { localStorage.setItem('vox_fontSize', fontSize); } catch(e) {}
+  try { localStorage.setItem('vox_fontSize', fontSize); } catch (e) {}
 }
 
-// ════════════════════════════════════════
-// STATUS / PLAY BTN
-// ════════════════════════════════════════
+function setTheme(name, el) {
+  currentTheme = name;
+  document.body.classList.remove('theme-light', 'theme-sepia', 'theme-slate', 'theme-forest', 'theme-ocean');
+  if (name !== 'dark') document.body.classList.add('theme-' + name);
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  try { localStorage.setItem('vox_theme', name); } catch (e) {}
+}
+
 function setStatus(text, state) {
   document.getElementById('statusText').textContent = text;
   document.getElementById('statusDot').className = 'status-dot' + (state ? ' ' + state : '');
 }
-function setPlayBtn(playing) {
+function setPlayBtn(p) {
   const btn = document.getElementById('playBtn');
-  btn.textContent = playing ? '⏸' : '▶';
-  btn.classList.toggle('playing', playing);
+  btn.textContent = p ? '⏸' : '▶';
+  btn.classList.toggle('playing', p);
+}
+
+function togglePaste() {
+  pasteVisible = !pasteVisible;
+  document.getElementById('pasteBody').classList.toggle('hidden', !pasteVisible);
+  document.getElementById('editTextBtn').classList.toggle('active-action', pasteVisible);
+  if (pasteVisible) {
+    document.getElementById('pasteStrip').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('textInput').focus(), 350);
+  }
 }
 
 // ════════════════════════════════════════
@@ -1039,37 +1095,26 @@ function setPlayBtn(playing) {
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
-  else if (e.key === 'r' || e.key === 'R') { skipBack(); }
+  else if (e.key === 'ArrowLeft')  { skipSentence(-1); }
+  else if (e.key === 'ArrowRight') { skipSentence(1); }
+  else if (e.key === 'r' || e.key === 'R') { restartBook(); }
 });
 
-// ════════════════════════════════════════
-// THEME
-// ════════════════════════════════════════
-function setTheme(name, el) {
-  currentTheme = name;
-  document.body.classList.remove('theme-light', 'theme-sepia', 'theme-slate', 'theme-forest', 'theme-ocean');
-  if (name !== 'dark') document.body.classList.add('theme-' + name);
-  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  try { localStorage.setItem('vox_theme', name); } catch(e) {}
-}
+// Save reading position whenever the page is backgrounded/closed
+document.addEventListener('visibilitychange', () => { if (document.hidden) savePos(); });
+window.addEventListener('pagehide', savePos);
 
-// Apply persisted UI state on load
-(function() {
-  const themeEl = document.querySelector('.theme-btn.' + currentTheme);
-  setTheme(currentTheme, themeEl);
+// ════════════════════════════════════════
+// INIT — restore persisted state
+// ════════════════════════════════════════
+(function () {
+  setTheme(currentTheme, document.querySelector('.theme-btn.' + currentTheme));
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
   const ss = document.getElementById('speedSlider');
   ss.value = speechRate;
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(speechRate);
 
-  // Restore previously pasted text so refresh doesn't lose it.
-  const savedText = localStorage.getItem('vox_text');
-  if (savedText) document.getElementById('textInput').value = savedText;
-
-  // Track when the user is actively dragging the position slider so auto-updates
-  // from the boundary handler don't fight the user's input.
   const ps = document.getElementById('posSlider');
   const begin = () => { posSliderActive = true; };
   const end   = () => { posSliderActive = false; };
@@ -1078,9 +1123,19 @@ function setTheme(name, el) {
   ps.addEventListener('pointercancel', end);
   ps.addEventListener('touchstart', begin, { passive: true });
   ps.addEventListener('touchend', end);
-})();
 
-updateMeta();
+  renderLibrary();
+
+  // Reopen the last book at its saved position; else restore unsaved draft
+  const lastId = localStorage.getItem('vox_last_book');
+  if (lastId && getBooks().some(b => b.id === lastId)) {
+    openBook(lastId);
+  } else {
+    const draft = localStorage.getItem('vox_text');
+    if (draft) document.getElementById('textInput').value = draft;
+    updateMeta();
+  }
+})();
 </script>
 </body>
 </html>
