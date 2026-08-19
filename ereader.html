@@ -843,7 +843,9 @@ function splitSentences(text) {
 // What gets SPOKEN for a displayed word: markdown decoration characters are
 // silently skipped in speech only. Display is never modified.
 function spokenForm(tok) {
-  return tok.replace(/[*_`#>|~\[\]()]/g, '').trim();
+  return tok.replace(/[*_`#>|~\[\]()]/g, '')
+            .replace(/(\d):(\d)/g, '$1 $2')
+            .trim();
 }
 
 function buildReader(text) {
