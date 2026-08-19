@@ -82,6 +82,16 @@
   }
   .logo span { color: var(--text-muted); font-style: italic; font-weight: 400; }
 
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .hamburger-btn {
+    background: none; border: none;
+    color: var(--text); font-size: 1.4rem;
+    cursor: pointer; padding: 2px 4px;
+    display: flex; align-items: center;
+    -webkit-appearance: none;
+  }
+  .hamburger-btn:active { color: var(--accent); }
+
   .header-right { display: flex; align-items: center; gap: 8px; }
 
   .rsvp-link {
@@ -164,6 +174,73 @@
   }
   .paste-body.hidden { max-height: 0; opacity: 0; pointer-events: none; }
 
+  /* ── DRAWER ────────────────────────────── */
+  .drawer-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 85vw; max-width: 360px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    z-index: 500;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .drawer.open { transform: translateX(0); }
+
+  .drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .drawer-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 600;
+    color: var(--accent);
+  }
+  .drawer-close {
+    background: none; border: none;
+    color: var(--text-muted); font-size: 1.2rem;
+    cursor: pointer; padding: 4px 8px;
+    -webkit-appearance: none;
+  }
+  .drawer-close:active { color: var(--text); }
+
+  .drawer-body { padding: 14px 16px; }
+
+  .new-btn {
+    width: 100%; padding: 12px;
+    background: var(--surface2);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--accent); font-family: 'Lora', serif;
+    font-size: 0.95rem; cursor: pointer;
+    margin-bottom: 14px;
+    transition: border-color var(--tr), background var(--tr);
+    -webkit-appearance: none;
+  }
+  .new-btn:active { border-color: var(--accent); border-style: solid; background: var(--surface); }
+
+  .drawer-divider {
+    height: 1px; background: var(--border);
+    margin: 14px 0;
+  }
+
+  .drawer .lib-row { flex-direction: column; }
+  .drawer .book-chip { max-width: none; }
+  .drawer .chip-title { max-width: none; }
+
   #textInput {
     width: 100%; height: 110px;
     min-height: 80px; max-height: 70vh;
@@ -195,7 +272,8 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px 20px;
-    height: 52dvh;
+    height: 60dvh;
+    position: relative;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     line-height: 1.85;
@@ -220,6 +298,13 @@
   .progress-fill {
     height: 100%; background: var(--accent);
     transition: width 0.3s; width: 0%; border-radius: 2px;
+  }
+
+  .progress-meta {
+    display: flex; justify-content: space-between;
+    padding: 4px 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; color: var(--text-muted);
   }
 
   /* Word / sentence highlighting */
@@ -358,7 +443,10 @@
 
 <!-- FIXED HEADER -->
 <header>
-  <div class="logo">Vox <span>Reader</span></div>
+  <div class="header-left">
+    <button class="hamburger-btn" onclick="toggleDrawer()">☰</button>
+    <div class="logo">Vox <span>Reader</span></div>
+  </div>
   <div class="header-right">
     <div class="font-controls">
       <button class="font-btn" onclick="changeFontSize(-1)">A−</button>
@@ -376,17 +464,17 @@
   </div>
 </header>
 
-<!-- LIBRARY + PASTE STRIP -->
-<div class="paste-strip" id="pasteStrip">
-  <div class="paste-strip-header">
-    <span class="paste-lbl">Library</span>
-    <div class="text-meta">
-      <span id="wordCount">0 words</span>
-      <span id="readTime">~0 min</span>
-    </div>
+<!-- LIBRARY DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">Library</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
-  <div class="lib-row" id="libRow"></div>
-  <div class="paste-body" id="pasteBody">
+  <div class="drawer-body">
+    <button class="new-btn" onclick="newEntry()">+ New</button>
+    <div class="lib-row" id="libRow"></div>
+    <div class="drawer-divider"></div>
     <textarea id="textInput" placeholder="Paste your text here, then tap Load…" spellcheck="false"></textarea>
     <button class="load-btn" onclick="loadText()">Load Text →</button>
   </div>
@@ -395,13 +483,15 @@
 <!-- READER PANE -->
 <div class="reader-wrap">
   <div id="readerPane">
-    <div class="reader-empty">Pick a book above, or paste new text.</div>
+    <div class="reader-empty">Tap + New to paste text, or ☰ to open your library.</div>
   </div>
 </div>
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div class="progress-meta"><span id="wordCount">0 words</span><span id="readTime">~0 min</span></div>
 
 <div class="quick-actions">
-  <button class="qa-btn" id="editTextBtn" onclick="togglePaste()">✏️ Paste / Edit Text</button>
+  <button class="qa-btn" onclick="openDrawer()">📚 Library</button>
+  <button class="qa-btn" onclick="newEntry()">+ New</button>
 </div>
 
 <!-- CONTROLS BAR -->
@@ -466,7 +556,6 @@ let speechRate = parseFloat(localStorage.getItem('vox_speed') || '1.0');
 let fontSize   = parseInt(localStorage.getItem('vox_fontSize') || '17', 10);
 let currentTheme = localStorage.getItem('vox_theme') || 'dark';
 let synth = window.speechSynthesis;
-let pasteVisible = true;
 let pendingRestartTimer = null;
 let posSliderActive = false;
 
@@ -486,6 +575,30 @@ function scheduleRestart(idx, delayMs) {
 }
 function cancelPendingRestart() {
   if (pendingRestartTimer) { clearTimeout(pendingRestartTimer); pendingRestartTimer = null; }
+}
+
+// ════════════════════════════════════════
+// DRAWER
+// ════════════════════════════════════════
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function toggleDrawer() {
+  if (document.getElementById('drawer').classList.contains('open')) closeDrawer();
+  else openDrawer();
+}
+function newEntry() {
+  openDrawer();
+  document.getElementById('textInput').value = '';
+  try { localStorage.removeItem('vox_text'); } catch (e) {}
+  setTimeout(() => document.getElementById('textInput').focus(), 350);
 }
 
 // ════════════════════════════════════════
@@ -705,7 +818,7 @@ function finishOpen(book, startWord) {
   }
   updatePositionSlider(); updateProgress(); updateReadTime(); updateMeta();
   renderLibrary();
-  if (pasteVisible) togglePaste();   // collapse paste area
+  closeDrawer();
   const pct = words.length ? Math.round((curWord / Math.max(words.length - 1, 1)) * 100) : 0;
   setStatus(curWord > 0 ? 'Resumed "' + book.title + '" at ' + pct + '%' : 'Loaded "' + book.title + '"', '');
 }
@@ -981,6 +1094,7 @@ function seekToWord(g) {
 
 function seekPositionDisplay(pct) {
   document.getElementById('posVal').textContent = Math.round(pct) + '%';
+  applyPositionGradient(pct);
 }
 function seekPositionCommit(pct) {
   if (!words.length) return;
@@ -992,6 +1106,7 @@ function updatePositionSlider() {
   const pct = (Math.min(curWord, words.length) / Math.max(words.length - 1, 1)) * 100;
   document.getElementById('posSlider').value = pct;
   document.getElementById('posVal').textContent = Math.round(Math.min(pct, 100)) + '%';
+  applyPositionGradient(Math.min(pct, 100));
 }
 
 function updateProgress(force) {
@@ -1080,14 +1195,9 @@ function setPlayBtn(p) {
   btn.classList.toggle('playing', p);
 }
 
-function togglePaste() {
-  pasteVisible = !pasteVisible;
-  document.getElementById('pasteBody').classList.toggle('hidden', !pasteVisible);
-  document.getElementById('editTextBtn').classList.toggle('active-action', pasteVisible);
-  if (pasteVisible) {
-    document.getElementById('pasteStrip').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => document.getElementById('textInput').focus(), 350);
-  }
+function applyPositionGradient(pct) {
+  document.getElementById('posSlider').style.background =
+    `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--border) ${pct}%, var(--border) 100%)`;
 }
 
 // ════════════════════════════════════════
@@ -1095,6 +1205,7 @@ function togglePaste() {
 // ════════════════════════════════════════
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') { closeDrawer(); return; }
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
   else if (e.key === 'ArrowLeft')  { skipSentence(-1); }
   else if (e.key === 'ArrowRight') { skipSentence(1); }
@@ -1115,6 +1226,7 @@ window.addEventListener('pagehide', savePos);
   ss.value = speechRate;
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
   applySpeedGradient(speechRate);
+  applyPositionGradient(0);
 
   const ps = document.getElementById('posSlider');
   const begin = () => { posSliderActive = true; };
