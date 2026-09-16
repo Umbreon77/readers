@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Vox Reader</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -125,27 +126,7 @@
   }
   .font-btn:active { background: var(--accent); color: #fff; }
 
-  /* ── PASTE / LIBRARY STRIP ─────────────── */
-  .paste-strip {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-  }
-  .paste-strip-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .paste-lbl {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--text-muted);
-  }
-  .text-meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem; color: var(--text-muted);
-    display: flex; gap: 10px;
-  }
-
+  /* ── LIBRARY ────────────────────────────── */
   .lib-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
   .lib-row:empty { display: none; }
   .book-chip {
@@ -166,13 +147,6 @@
     padding: 2px 3px; flex-shrink: 0;
   }
   .chip-del:active { color: #e05c5c; }
-
-  .paste-body {
-    overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
-    max-height: 85vh; opacity: 1;
-  }
-  .paste-body.hidden { max-height: 0; opacity: 0; pointer-events: none; }
 
   /* ── DRAWER ────────────────────────────── */
   .drawer-overlay {
@@ -272,7 +246,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px 20px;
-    height: 60dvh;
+    height: 60vh; height: 60dvh;
     position: relative;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -328,7 +302,6 @@
     -webkit-appearance: none;
   }
   .qa-btn:active { border-color: var(--accent); background: var(--surface); }
-  .qa-btn.active-action { border-color: var(--accent); color: var(--accent); }
 
   /* ── CONTROLS BAR ──────────────────────── */
   .controls-bar { padding: 10px 16px 4px; }
@@ -566,15 +539,89 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const VOICE_SWITCH_DELAY = IS_IOS ? 300 : 40;
 
+// ════ WEBKIT RATE MAP ════════════════════
+// Safari (iOS + macOS) routes Web Speech through AVSpeechSynthesizer,
+// which maps rate 1→2 onto default→max (several times normal speed).
+// Chrome maps linearly. We compress the slider value on WebKit only,
+// using a calibration table tuned from on-device WPM measurements.
+const IS_WEBKIT = IS_IOS || (/AppleWebKit/.test(navigator.userAgent) && !/Chrome|Edg/.test(navigator.userAgent));
+const WEBKIT_RATE_TABLE = [[1.0, 1.0], [1.5, 1.12], [2.0, 1.25], [2.5, 1.4], [3.0, 1.6]];
+function engineRate(sliderRate) {
+  if (!IS_WEBKIT || sliderRate <= 1) return sliderRate;
+  const T = WEBKIT_RATE_TABLE;
+  for (let i = 1; i < T.length; i++) {
+    if (sliderRate <= T[i][0]) {
+      const t = (sliderRate - T[i - 1][0]) / (T[i][0] - T[i - 1][0]);
+      return T[i - 1][1] + t * (T[i][1] - T[i - 1][1]);
+    }
+  }
+  return T[T.length - 1][1];
+}
+
+let wantPlaying = false;
+let resumeOnReturn = false;
+let measuredWpm = null;
+let lastWpmRate = null;
+let lastWpmVoice = null;
+let lastHighlightWord = null;
+let lastHighlightSentence = null;
+let draftSaveTimer = null;
+let newDraft = false;
+
+// ════ BACKGROUND KEEP-ALIVE (experimental) ═
+const KEEPALIVE = true;
+let keepAliveEl = null;
+if (KEEPALIVE) {
+  const sr = 8000, sec = 1, ch = 1;
+  const numSamples = sr * sec;
+  const dataSize = numSamples * ch * 2;
+  const buf = new ArrayBuffer(44 + dataSize);
+  const dv = new DataView(buf);
+  const ws = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF');
+  dv.setUint32(4, 36 + dataSize, true);
+  ws(8, 'WAVE');
+  ws(12, 'fmt ');
+  dv.setUint32(16, 16, true);
+  dv.setUint16(20, 1, true);
+  dv.setUint16(22, ch, true);
+  dv.setUint32(24, sr, true);
+  dv.setUint32(28, sr * ch * 2, true);
+  dv.setUint16(32, ch * 2, true);
+  dv.setUint16(34, 16, true);
+  ws(36, 'data');
+  dv.setUint32(40, dataSize, true);
+  keepAliveEl = document.createElement('audio');
+  keepAliveEl.id = 'keepAlive';
+  keepAliveEl.loop = true;
+  keepAliveEl.setAttribute('playsinline', '');
+  keepAliveEl.src = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  document.body.appendChild(keepAliveEl);
+}
+function startKeepAlive() {
+  if (KEEPALIVE && keepAliveEl) keepAliveEl.play().catch(() => {});
+  if (KEEPALIVE && 'mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+}
+function stopKeepAlive() {
+  if (KEEPALIVE && keepAliveEl) keepAliveEl.pause();
+  if (KEEPALIVE && 'mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+}
+
 function scheduleRestart(idx, delayMs) {
   if (pendingRestartTimer) clearTimeout(pendingRestartTimer);
   pendingRestartTimer = setTimeout(() => {
     pendingRestartTimer = null;
-    speakFrom(idx);
+    if (wantPlaying) speakFrom(idx);
   }, delayMs);
 }
 function cancelPendingRestart() {
   if (pendingRestartTimer) { clearTimeout(pendingRestartTimer); pendingRestartTimer = null; }
+}
+function restartAt(g, delayMs) {
+  cancelPendingRestart();
+  activeUtterance = null;
+  synth.cancel();
+  scheduleRestart(g, delayMs);
 }
 
 // ════════════════════════════════════════
@@ -595,6 +642,7 @@ function toggleDrawer() {
   else openDrawer();
 }
 function newEntry() {
+  newDraft = true;
   openDrawer();
   document.getElementById('textInput').value = '';
   try { localStorage.removeItem('vox_text'); } catch (e) {}
@@ -653,10 +701,7 @@ function refreshVoices() {
 function initVoices() {
   if (refreshVoices()) return;
   synth.onvoiceschanged = () => { refreshVoices(); };
-  let tries = 0;
-  const poll = setInterval(() => {
-    if (refreshVoices() || ++tries > 15) clearInterval(poll);
-  }, 200);
+  setTimeout(() => { if (!Object.keys(voiceMap).length) refreshVoices(); }, 1000);
 }
 
 function unavailReason(name) {
@@ -705,15 +750,10 @@ function selectVoice(name) {
     return;
   }
   selectedVoiceName = name;
+  measuredWpm = null;
   try { localStorage.setItem('vox_voice_name', name); } catch (e) {}
   renderVoiceGrid();
-  if (playing) {
-    const g = curWord;
-    activeUtterance = null;
-    synth.cancel();
-    playing = false;
-    scheduleRestart(g, VOICE_SWITCH_DELAY);
-  }
+  if (wantPlaying) restartAt(curWord, VOICE_SWITCH_DELAY);
 }
 
 function getSelectedVoice() { return voiceMap[selectedVoiceName] || null; }
@@ -728,8 +768,8 @@ function getBooks() {
   catch (e) { return []; }
 }
 function saveBooks(books) {
-  try { localStorage.setItem('vox_books', JSON.stringify(books)); }
-  catch (e) { setStatus('Storage full — book may not be saved', ''); }
+  try { localStorage.setItem('vox_books', JSON.stringify(books)); return true; }
+  catch (e) { return false; }
 }
 function getPos(id) {
   return parseInt(localStorage.getItem('vox_pos_' + id) || '0', 10);
@@ -775,27 +815,53 @@ function deleteBook(id, ev) {
   renderLibrary();
 }
 
-// "Load Text" button: save paste as a book (deduped) and open it.
+// "Load Text" button: dedupes, updates in place, or creates a new book.
 function loadText() {
   const raw = document.getElementById('textInput').value;
   if (!raw.trim()) return;
   const books = getBooks();
-  let book = books.find(b => b.text === raw);
-  if (!book) {
-    book = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      title: makeTitle(raw),
-      text: raw,
-      words: 0,
-      added: Date.now(),
-    };
-    books.unshift(book);
+  const existing = books.find(b => b.text === raw);
+  if (existing) {
+    openBook(existing.id);
+    newDraft = false;
+    return;
   }
-  curBookId = book.id;  // set before buildReader so word count can be stored
-  buildReader(book.text);
+  if (curBookId && !newDraft) {
+    const book = books.find(b => b.id === curBookId);
+    if (book && makeTitle(raw) === book.title) {
+      book.text = raw;
+      book.title = makeTitle(raw);
+      buildReader(raw);
+      book.words = words.length;
+      if (!saveBooks(books)) {
+        setStatus('Storage full — book not saved', '');
+        return;
+      }
+      try { localStorage.setItem('vox_pos_' + book.id, '0'); } catch (e) {}
+      finishOpen(book, 0);
+      setStatus('Updated "' + book.title + '"', '');
+      newDraft = false;
+      return;
+    }
+  }
+  const book = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    title: makeTitle(raw),
+    text: raw,
+    words: 0,
+    added: Date.now(),
+  };
+  books.unshift(book);
+  curBookId = book.id;
+  buildReader(raw);
   book.words = words.length;
-  saveBooks(books);
+  if (!saveBooks(books)) {
+    setStatus('Storage full — book not saved', '');
+    curBookId = null;
+    return;
+  }
   finishOpen(book, 0);
+  newDraft = false;
 }
 
 function openBook(id) {
@@ -803,6 +869,7 @@ function openBook(id) {
   if (!book) return;
   stopReading();
   curBookId = id;
+  newDraft = false;
   document.getElementById('textInput').value = book.text;
   buildReader(book.text);
   const pos = getPos(id);
@@ -811,6 +878,9 @@ function openBook(id) {
 
 function finishOpen(book, startWord) {
   try { localStorage.setItem('vox_last_book', book.id); } catch (e) {}
+  if (KEEPALIVE && 'mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: 'Vox Reader' });
+  }
   curWord = startWord;
   if (words.length) {
     highlightWord(curWord);
@@ -831,21 +901,24 @@ function finishOpen(book, startWord) {
 // Sentence split that keeps every character: pieces concatenate back to the
 // original paragraph. Abbreviations + decimals protected from splitting.
 function splitSentences(text) {
-  const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|est|fig|govt|incl|no|Vol|vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi;
+  const abbrevPat = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|approx|dept|govt|incl|Vol|Capt|Col|Cpl|Gen|Pvt|Sgt|Lt|Ave|Blvd|Rd|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|e\.g|i\.e)\./g;
   const safe = text.replace(abbrevPat, m => m.slice(0, -1) + '\x00')
                    .replace(/(\d)\.(\d)/g, '$1\x00$2');
-  return safe.replace(/([.!?…]+["'»‘’“”)\]]*)(\s+|$)/g, '$1$2\x01')
+  return safe.replace(/(\n)(?=[ \t]*\S)/g, '$1\x01')
+             .replace(/([.!?…]+["'»‘’“”)\]]*)(\s+|$)/g, '$1$2\x01')
              .split('\x01')
              .map(s => s.replace(/\x00/g, '.'))
              .filter(s => s.length);
 }
-
 // What gets SPOKEN for a displayed word: markdown decoration characters are
 // silently skipped in speech only. Display is never modified.
+const DECOR = '[*_`#>|~\\[\\]()]';
+const STRIP_DECOR = new RegExp(`(?<![\\p{L}\\p{N}])${DECOR}+|${DECOR}+(?![\\p{L}\\p{N}])`, 'gu');
 function spokenForm(tok) {
-  return tok.replace(/[*_`#>|~\[\]()]/g, '')
-            .replace(/(\d):(\d)/g, '$1 $2')
-            .trim();
+  const linkMatch = tok.match(/^\[([^\]]+)\]\([^)]*\)$/);
+  if (linkMatch) return linkMatch[1].replace(/(\d):(\d)/g, '$1 $2').trim();
+  let s = tok.replace(STRIP_DECOR, '');
+  return s.replace(/(\d):(\d)/g, '$1 $2').trim();
 }
 
 function buildReader(text) {
@@ -924,7 +997,9 @@ function buildReader(text) {
 // ════════════════════════════════════════
 function togglePlay() {
   if (!words.length) { loadText(); if (!words.length) return; }
-  if (playing) { pauseReading(); return; }
+  if (wantPlaying) { pauseReading(); return; }
+  wantPlaying = true;
+  startKeepAlive();
   const start = curWord >= words.length ? 0 : curWord;
   speakFrom(start);
 }
@@ -944,26 +1019,56 @@ function speakFrom(g) {
 function speakUnit(g) {
   const sIdx = words[g].sentIdx;
   const sent = sentences[sIdx];
-  // Words of this unit from g onward that have something speakable
   const chunk = sent.words.filter(w => w.globalIdx >= g && w.spoken);
   if (!chunk.length) { advanceFrom(sIdx); return; }
 
-  const text = chunk.map(w => w.spoken).join(' ');
+  let text = ''; const starts = [];
+  chunk.forEach((w, i) => { if (i) text += ' '; starts.push(text.length); text += w.spoken; });
+
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = speechRate;
+  u.rate = engineRate(speechRate);
   const v = getSelectedVoice();
   if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-US'; }
 
   u.onboundary = (e) => {
     if (e.name !== 'word') return;
-    const before = text.slice(0, e.charIndex);
-    const n = before.trim() ? before.trim().split(/\s+/).length : 0;
-    const w = chunk[Math.min(n, chunk.length - 1)];
+    let idx = 0;
+    for (let i = starts.length - 1; i >= 0; i--) {
+      if (starts[i] <= e.charIndex) { idx = i; break; }
+    }
+    const w = chunk[idx];
     if (w.globalIdx !== curWord) setCurrentWord(w.globalIdx);
   };
+
+  let speakT0 = performance.now();
+  const speakWordCount = chunk.length;
+  u.onstart = () => { speakT0 = performance.now(); };
+
   u.onend = () => {
-    // Stale events from cancelled utterances must not advance playback
     if (u !== activeUtterance || !playing) return;
+
+    if (speakWordCount >= 4) {
+      const elapsed = performance.now() - speakT0;
+      if (elapsed >= 1000) {
+        const wpm = speakWordCount / (elapsed / 60000);
+        if (speechRate !== lastWpmRate || selectedVoiceName !== lastWpmVoice) {
+          measuredWpm = wpm;
+          lastWpmRate = speechRate;
+          lastWpmVoice = selectedVoiceName;
+        } else {
+          measuredWpm = measuredWpm != null ? measuredWpm * 0.7 + wpm * 0.3 : wpm;
+        }
+        updateReadTime();
+        if (/[?&]debug/.test(location.search)) {
+          const dbg = document.getElementById('voiceDebug');
+          dbg.style.display = 'block';
+          const line = `slider ${speechRate.toFixed(1)}× → engine ${engineRate(speechRate).toFixed(2)} | measured ${Math.round(wpm)} wpm | avg ${Math.round(measuredWpm)} wpm | ${selectedVoiceName || 'default'}`;
+          const parts = dbg.textContent.split('── WPM ──');
+          dbg.textContent = parts[0].trimEnd() + '\n── WPM ──\n' + line;
+        }
+      }
+    }
+
     activeUtterance = null;
     advanceFrom(sIdx);
   };
@@ -971,8 +1076,10 @@ function speakUnit(g) {
     if (e.error === 'canceled' || e.error === 'interrupted') return;
     if (u !== activeUtterance) return;
     activeUtterance = null;
+    wantPlaying = false;
     playing = false;
     setPlayBtn(false);
+    stopKeepAlive();
     setStatus('Speech error (' + (e.error || 'unknown') + ') — tap play to continue', '');
     savePos();
   };
@@ -991,8 +1098,10 @@ function advanceFrom(sIdx) {
 }
 
 function finishedReading() {
+  wantPlaying = false;
   playing = false;
   activeUtterance = null;
+  stopKeepAlive();
   curWord = words.length;
   clearHighlights();
   setPlayBtn(false);
@@ -1003,22 +1112,26 @@ function finishedReading() {
 }
 
 function pauseReading() {
+  wantPlaying = false;
   cancelPendingRestart();
   activeUtterance = null;
   synth.cancel();
   playing = false;
   setPlayBtn(false);
+  stopKeepAlive();
   setStatus('Paused', 'paused');
   savePos();
 }
 
 function stopReading(resetHL = true) {
+  wantPlaying = false;
   cancelPendingRestart();
   activeUtterance = null;
   synth.cancel();
   playing = false;
   if (resetHL) clearHighlights();
   setPlayBtn(false);
+  stopKeepAlive();
   setStatus('Ready', '');
 }
 
@@ -1056,6 +1169,8 @@ function highlightWord(idx) {
   clearHighlights();
   el.classList.add('active-word');
   sentenceEl.classList.add('active-sentence');
+  lastHighlightWord = el;
+  lastHighlightSentence = sentenceEl;
   const pane = document.getElementById('readerPane');
   const elTop = el.offsetTop;
   const elBot = elTop + el.offsetHeight;
@@ -1075,23 +1190,21 @@ function scrollToCurrent() {
 }
 
 function clearHighlights() {
-  document.querySelectorAll('.sentence.active-sentence').forEach(s => s.classList.remove('active-sentence'));
-  document.querySelectorAll('.word.active-word').forEach(w => w.classList.remove('active-word'));
+  if (lastHighlightSentence) { lastHighlightSentence.classList.remove('active-sentence'); lastHighlightSentence = null; }
+  if (lastHighlightWord) { lastHighlightWord.classList.remove('active-word'); lastHighlightWord = null; }
 }
 
 function seekToWord(g) {
   if (!words.length) return;
   g = Math.max(0, Math.min(g, words.length - 1));
-  const was = playing;
-  if (was) {
-    cancelPendingRestart();
+  const was = wantPlaying;
+  if (synth.speaking || synth.pending) {
     activeUtterance = null;
     synth.cancel();
-    playing = false;
   }
   setCurrentWord(g);
   savePos();
-  if (was) scheduleRestart(g, 150);
+  if (was) restartAt(g, 150);
 }
 
 function seekPositionDisplay(pct) {
@@ -1122,8 +1235,11 @@ function updateProgress(force) {
 // ════════════════════════════════════════
 document.getElementById('textInput').addEventListener('input', () => {
   updateMeta();
-  const v = document.getElementById('textInput').value;
-  try { localStorage.setItem('vox_text', v); } catch (e) {}
+  if (draftSaveTimer) clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => {
+    const v = document.getElementById('textInput').value;
+    try { localStorage.setItem('vox_text', v); } catch (e) {}
+  }, 300);
 });
 
 function updateMeta() {
@@ -1142,7 +1258,9 @@ function updateReadTime() {
     const t = document.getElementById('textInput').value.trim();
     wc = t ? t.split(/\s+/).length : 0;
   }
-  const mins = Math.ceil(wc / (200 * speechRate));
+  const BASE_WPM = 175;
+  const effectiveWpm = measuredWpm || (BASE_WPM * speechRate);
+  const mins = Math.ceil(wc / effectiveWpm);
   document.getElementById('readTime').textContent = '~' + mins + ' min';
 }
 
@@ -1162,14 +1280,9 @@ function updateSpeedDisplay(val) {
 }
 function updateSpeedCommit(val) {
   speechRate = parseFloat(val);
+  measuredWpm = null;
   try { localStorage.setItem('vox_speed', speechRate); } catch (e) {}
-  if (playing) {
-    const g = curWord;
-    activeUtterance = null;
-    synth.cancel();
-    playing = false;
-    scheduleRestart(g, 150);
-  }
+  if (wantPlaying) restartAt(curWord, 150);
 }
 
 function changeFontSize(delta) {
@@ -1214,9 +1327,35 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'r' || e.key === 'R') { restartBook(); }
 });
 
-// Save reading position whenever the page is backgrounded/closed
-document.addEventListener('visibilitychange', () => { if (document.hidden) savePos(); });
+// Save reading position and handle background/resume on iPhone
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    savePos();
+    resumeOnReturn = wantPlaying;
+  } else {
+    const engineActive = synth.speaking || synth.pending;
+    if (resumeOnReturn && (IS_IOS || !engineActive)) {
+      startKeepAlive();
+      restartAt(curWord, VOICE_SWITCH_DELAY);
+    } else if (wantPlaying && !engineActive) {
+      wantPlaying = false;
+      playing = false;
+      setPlayBtn(false);
+      stopKeepAlive();
+      setStatus('Paused (backgrounded)', 'paused');
+      savePos();
+    }
+    resumeOnReturn = false;
+  }
+});
 window.addEventListener('pagehide', savePos);
+
+if (KEEPALIVE && 'mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => { if (!wantPlaying) togglePlay(); });
+  navigator.mediaSession.setActionHandler('pause', () => pauseReading());
+  navigator.mediaSession.setActionHandler('nexttrack', () => skipSentence(1));
+  navigator.mediaSession.setActionHandler('previoustrack', () => skipSentence(-1));
+}
 
 // ════════════════════════════════════════
 // INIT — restore persisted state
