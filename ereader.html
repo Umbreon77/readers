@@ -127,8 +127,35 @@
   .font-btn:active { background: var(--accent); color: #fff; }
 
   /* ── LIBRARY ────────────────────────────── */
-  .lib-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
-  .lib-row:empty { display: none; }
+  .lib-search, .meta-input {
+    width: 100%; padding: 9px 12px;
+    background: var(--surface2); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 9px;
+    font-family: 'Lora', serif; font-size: 0.9rem; outline: none;
+    -webkit-appearance: none;
+  }
+  .lib-search { margin-bottom: 12px; }
+  .lib-search:focus, .meta-input:focus { border-color: var(--accent); }
+  .lib-search::placeholder, .meta-input::placeholder { color: var(--text-muted); font-style: italic; }
+  .meta-input { margin-bottom: 8px; }
+  .lib-empty { color: var(--text-muted); font-size: 0.8rem; font-style: italic; padding: 4px 2px; }
+
+  .grp { margin-bottom: 10px; }
+  .grp-head {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    background: none; border: none; padding: 4px 2px 6px;
+    color: var(--text-muted); cursor: pointer; text-align: left;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    -webkit-appearance: none;
+  }
+  .grp-head:hover { color: var(--text); }
+  .grp-caret { display: inline-block; transition: transform var(--tr); }
+  .grp.collapsed .grp-caret { transform: rotate(-90deg); }
+  .grp.collapsed .lib-row { display: none; }
+  .grp-count { margin-left: auto; opacity: 0.7; }
+
+  .lib-row { display: flex; flex-direction: column; gap: 7px; }
   .book-chip {
     display: flex; align-items: center; gap: 7px;
     background: var(--surface2); border: 1.5px solid var(--border);
@@ -136,17 +163,32 @@
     font-size: 0.8rem; cursor: pointer; max-width: 100%;
     transition: border-color var(--tr);
   }
+  .book-chip:hover { border-color: var(--text-muted); }
   .book-chip.active { border-color: var(--accent); color: var(--accent); }
-  .chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+  .chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
   .chip-pct {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0;
   }
-  .chip-del {
-    color: var(--text-muted); font-size: 0.95rem; line-height: 1;
-    padding: 2px 3px; flex-shrink: 0;
+  .chip-more {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1rem; line-height: 1; padding: 0 4px; flex-shrink: 0;
+    cursor: pointer; -webkit-appearance: none;
   }
-  .chip-del:active { color: #e05c5c; }
+  .chip-more:hover { color: var(--text); }
+  .chip-edit {
+    background: var(--surface2); border: 1.5px solid var(--accent);
+    border-radius: 9px; padding: 10px; margin-top: -2px;
+  }
+  .chip-edit-btns { display: flex; gap: 6px; }
+  .chip-edit-btns button {
+    flex: 1; padding: 7px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-family: 'Lora', serif; font-size: 0.8rem;
+    -webkit-appearance: none;
+  }
+  .chip-edit-btns .save { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip-edit-btns .del { color: #e05c5c; flex: 0 0 auto; padding: 7px 12px; }
 
   /* ── DRAWER ────────────────────────────── */
   .drawer-overlay {
@@ -160,15 +202,14 @@
 
   .drawer {
     position: fixed; top: 0; left: 0; bottom: 0;
-    width: 85vw; max-width: 360px;
+    width: 85vw; max-width: 420px;
     background: var(--surface);
     border-right: 1px solid var(--border);
     z-index: 500;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     display: flex; flex-direction: column;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
   }
   .drawer.open { transform: translateX(0); }
 
@@ -191,7 +232,12 @@
   }
   .drawer-close:active { color: var(--text); }
 
-  .drawer-body { padding: 14px 16px; overflow: hidden; }
+  .drawer-body {
+    flex: 1 1 auto; min-height: 0;
+    padding: 14px 16px 24px;
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  }
 
   .new-btn {
     width: 100%; padding: 12px;
@@ -211,9 +257,6 @@
     margin: 14px 0;
   }
 
-  .drawer .lib-row { flex-direction: column; }
-  .drawer .book-chip { max-width: 100%; }
-  .drawer .chip-title { max-width: none; }
 
   #textInput {
     width: 100%; height: 110px;
@@ -446,8 +489,12 @@
   </div>
   <div class="drawer-body">
     <button class="new-btn" onclick="newEntry()">+ New</button>
-    <div class="lib-row" id="libRow"></div>
+    <input id="libSearch" class="lib-search" type="search" placeholder="Search titles, groups, text…" oninput="renderLibrary()" autocomplete="off">
+    <div id="libList"></div>
+    <datalist id="groupList"></datalist>
     <div class="drawer-divider"></div>
+    <input id="titleInput" class="meta-input" placeholder="Title (optional — defaults to first line)" autocomplete="off">
+    <input id="groupInput" class="meta-input" list="groupList" placeholder="Group (optional)" autocomplete="off">
     <textarea id="textInput" placeholder="Paste your text here, then tap Load…" spellcheck="false"></textarea>
     <button class="load-btn" onclick="loadText()">Load Text →</button>
   </div>
@@ -630,7 +677,8 @@ setInterval(() => {
   if (performance.now() - lastSpeechProgress < activeUtterance._stallLimit) return;
   if (++stallRetries > MAX_STALL_RETRIES) {
     pauseReading();
-    setStatus('Speech engine stuck — reload the page, then tap play', 'paused');
+    setStatus(IS_WEBKIT ? 'Speech engine stuck — close and reopen the tab, then tap play'
+                         : 'Speech engine stuck — quit the browser (⌘Q) and reopen, then tap play', 'paused');
     return;
   }
   setStatus('Reconnecting speech…', 'playing');
@@ -665,6 +713,7 @@ function newEntry() {
   newDraft = true;
   openDrawer();
   document.getElementById('textInput').value = '';
+  clearMetaInputs();
   try { localStorage.removeItem('vox_text'); } catch (e) {}
   setTimeout(() => document.getElementById('textInput').focus(), 350);
 }
@@ -803,23 +852,142 @@ function makeTitle(text) {
   return line.replace(/[#*_`>\[\]|]/g, '').trim().slice(0, 42) || 'Untitled';
 }
 
+function clearMetaInputs() {
+  document.getElementById('titleInput').value = '';
+  document.getElementById('groupInput').value = '';
+}
+// Title/group typed in the paste area; empty fields mean "leave as is".
+function applyMetaInputs(book) {
+  const t = document.getElementById('titleInput').value.trim();
+  const g = document.getElementById('groupInput').value.trim();
+  if (t) { book.title = t.slice(0, 120); book.customTitle = true; }
+  if (g) book.group = g.slice(0, 60);
+  clearMetaInputs();
+}
+
+function getCollapsed() {
+  try { return new Set(JSON.parse(localStorage.getItem('vox_collapsed') || '[]')); }
+  catch (e) { return new Set(); }
+}
+function toggleGroup(name) {
+  const c = getCollapsed();
+  c.has(name) ? c.delete(name) : c.add(name);
+  try { localStorage.setItem('vox_collapsed', JSON.stringify([...c])); } catch (e) {}
+  renderLibrary();
+}
+
+let editingBookId = null;
+
 function renderLibrary() {
-  const row = document.getElementById('libRow');
-  row.innerHTML = '';
-  getBooks().forEach(b => {
-    const total = b.words || 1;
-    const pct = Math.min(100, Math.round((getPos(b.id) / total) * 100));
-    const chip = document.createElement('div');
-    chip.className = 'book-chip' + (b.id === curBookId ? ' active' : '');
-    chip.innerHTML = `
-      <span class="chip-title"></span>
-      <span class="chip-pct">${pct}%</span>
-      <span class="chip-del">✕</span>`;
-    chip.querySelector('.chip-title').textContent = b.title;
-    chip.addEventListener('click', () => openBook(b.id));
-    chip.querySelector('.chip-del').addEventListener('click', (ev) => deleteBook(b.id, ev));
-    row.appendChild(chip);
+  const list = document.getElementById('libList');
+  const q = document.getElementById('libSearch').value.trim().toLowerCase();
+  const books = getBooks();
+  list.innerHTML = '';
+
+  const groupNames = [...new Set(books.map(b => b.group).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+  const dl = document.getElementById('groupList');
+  dl.innerHTML = '';
+  groupNames.forEach(g => { const o = document.createElement('option'); o.value = g; dl.appendChild(o); });
+
+  const shown = q
+    ? books.filter(b => (b.title + ' ' + (b.group || '') + ' ' + b.text).toLowerCase().includes(q))
+    : books;
+  if (!shown.length) {
+    list.innerHTML = `<div class="lib-empty">${q ? 'No matches.' : 'No saved texts yet.'}</div>`;
+    return;
+  }
+
+  const byGroup = new Map();
+  shown.forEach(b => {
+    const g = b.group || '';
+    if (!byGroup.has(g)) byGroup.set(g, []);
+    byGroup.get(g).push(b);
   });
+  const order = groupNames.filter(g => byGroup.has(g));
+  if (byGroup.has('')) order.push('');
+  const collapsed = getCollapsed();
+  const showHeads = groupNames.length > 0;
+
+  order.forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'grp' + (showHeads && !q && collapsed.has(g) ? ' collapsed' : '');
+    const items = byGroup.get(g).sort((a, b) => (b.opened || b.added) - (a.opened || a.added));
+    if (showHeads) {
+      const head = document.createElement('button');
+      head.className = 'grp-head';
+      head.innerHTML = `<span class="grp-caret">▾</span><span class="grp-name"></span><span class="grp-count">${items.length}</span>`;
+      head.querySelector('.grp-name').textContent = g || 'Ungrouped';
+      head.addEventListener('click', () => toggleGroup(g));
+      sec.appendChild(head);
+    }
+    const row = document.createElement('div');
+    row.className = 'lib-row';
+    items.forEach(b => row.appendChild(bookChip(b)));
+    sec.appendChild(row);
+    list.appendChild(sec);
+  });
+}
+
+function bookChip(b) {
+  const frag = document.createDocumentFragment();
+  const pct = Math.min(100, Math.round((getPos(b.id) / (b.words || 1)) * 100));
+  const chip = document.createElement('div');
+  chip.className = 'book-chip' + (b.id === curBookId ? ' active' : '');
+  chip.innerHTML = `
+    <span class="chip-title"></span>
+    <span class="chip-pct">${pct}%</span>
+    <button class="chip-more" title="Rename, group, delete">⋯</button>`;
+  chip.querySelector('.chip-title').textContent = b.title;
+  chip.title = b.title;
+  chip.addEventListener('click', () => openBook(b.id));
+  chip.querySelector('.chip-more').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    editingBookId = editingBookId === b.id ? null : b.id;
+    renderLibrary();
+  });
+  frag.appendChild(chip);
+  if (editingBookId === b.id) frag.appendChild(editPanel(b));
+  return frag;
+}
+
+function editPanel(b) {
+  const p = document.createElement('div');
+  p.className = 'chip-edit';
+  p.innerHTML = `
+    <input class="meta-input e-title" placeholder="Title" autocomplete="off">
+    <input class="meta-input e-group" list="groupList" placeholder="Group (blank = ungrouped)" autocomplete="off">
+    <div class="chip-edit-btns">
+      <button class="save">Save</button><button class="cancel">Cancel</button><button class="del">Delete</button>
+    </div>`;
+  const ti = p.querySelector('.e-title'), gi = p.querySelector('.e-group');
+  ti.value = b.title; gi.value = b.group || '';
+  const save = () => {
+    const books = getBooks();
+    const book = books.find(x => x.id === b.id);
+    if (!book) return;
+    const t = ti.value.trim();
+    if (t && t !== book.title) { book.title = t.slice(0, 120); book.customTitle = true; }
+    else if (!t) { book.title = makeTitle(book.text); book.customTitle = false; }
+    const g = gi.value.trim().slice(0, 60);
+    if (g) book.group = g; else delete book.group;
+    if (!saveBooks(books)) { setStatus('Storage full — changes not saved', ''); return; }
+    if (book.id === curBookId && KEEPALIVE && 'mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: 'Vox Reader' });
+    }
+    editingBookId = null;
+    renderLibrary();
+  };
+  const cancel = () => { editingBookId = null; renderLibrary(); };
+  p.querySelector('.save').addEventListener('click', save);
+  p.querySelector('.cancel').addEventListener('click', cancel);
+  p.querySelector('.del').addEventListener('click', (ev) => deleteBook(b.id, ev));
+  p.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    else if (e.key === 'Escape') { e.stopPropagation(); cancel(); }
+  });
+  setTimeout(() => { ti.focus(); ti.select(); }, 0);
+  return p;
 }
 
 function deleteBook(id, ev) {
@@ -832,6 +1000,7 @@ function deleteBook(id, ev) {
     curBookId = null;
     try { localStorage.removeItem('vox_last_book'); } catch (e) {}
   }
+  editingBookId = null;
   renderLibrary();
 }
 
@@ -842,15 +1011,18 @@ function loadText() {
   const books = getBooks();
   const existing = books.find(b => b.text === raw);
   if (existing) {
+    applyMetaInputs(existing);
+    saveBooks(books);
     openBook(existing.id);
     newDraft = false;
     return;
   }
   if (curBookId && !newDraft) {
     const book = books.find(b => b.id === curBookId);
-    if (book && makeTitle(raw) === book.title) {
+    if (book && makeTitle(raw) === makeTitle(book.text)) {
       book.text = raw;
-      book.title = makeTitle(raw);
+      if (!book.customTitle) book.title = makeTitle(raw);
+      applyMetaInputs(book);
       buildReader(raw);
       book.words = words.length;
       if (!saveBooks(books)) {
@@ -871,6 +1043,7 @@ function loadText() {
     words: 0,
     added: Date.now(),
   };
+  applyMetaInputs(book);
   books.unshift(book);
   curBookId = book.id;
   buildReader(raw);
@@ -885,11 +1058,15 @@ function loadText() {
 }
 
 function openBook(id) {
-  const book = getBooks().find(b => b.id === id);
+  const books = getBooks();
+  const book = books.find(b => b.id === id);
   if (!book) return;
+  book.opened = Date.now();
+  saveBooks(books);
   stopReading();
   curBookId = id;
   newDraft = false;
+  clearMetaInputs();
   document.getElementById('textInput').value = book.text;
   buildReader(book.text);
   const pos = getPos(id);
