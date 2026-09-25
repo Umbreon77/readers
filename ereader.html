@@ -617,6 +617,26 @@ function scheduleRestart(idx, delayMs) {
 function cancelPendingRestart() {
   if (pendingRestartTimer) { clearTimeout(pendingRestartTimer); pendingRestartTimer = null; }
 }
+// ════ STALL WATCHDOG ═════════════════════
+// Engines sometimes swallow an utterance (audio interruption, lock screen,
+// daemon hiccup): no onend, no error — the UI sits on "Playing…" in silence.
+// Track progress events; if none arrive in time, re-speak from curWord.
+const STALL_MS = 6000;
+const MAX_STALL_RETRIES = 3;
+let lastSpeechProgress = 0;
+let stallRetries = 0;
+setInterval(() => {
+  if (!playing || !wantPlaying || !activeUtterance || pendingRestartTimer) return;
+  if (performance.now() - lastSpeechProgress < activeUtterance._stallLimit) return;
+  if (++stallRetries > MAX_STALL_RETRIES) {
+    pauseReading();
+    setStatus('Speech engine stuck — reload the page, then tap play', 'paused');
+    return;
+  }
+  setStatus('Reconnecting speech…', 'playing');
+  restartAt(curWord, VOICE_SWITCH_DELAY);
+}, 1000);
+
 function restartAt(g, delayMs) {
   cancelPendingRestart();
   activeUtterance = null;
@@ -999,6 +1019,7 @@ function togglePlay() {
   if (!words.length) { loadText(); if (!words.length) return; }
   if (wantPlaying) { pauseReading(); return; }
   wantPlaying = true;
+  stallRetries = 0;
   startKeepAlive();
   const start = curWord >= words.length ? 0 : curWord;
   speakFrom(start);
@@ -1030,7 +1051,13 @@ function speakUnit(g) {
   const v = getSelectedVoice();
   if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = 'en-US'; }
 
+  // Before audio starts / between word events: STALL_MS. Voices that emit no
+  // boundary events get the whole estimated utterance length plus slack.
+  const estMs = chunk.length * 60000 / (150 * speechRate);
+  u._stallLimit = STALL_MS;
   u.onboundary = (e) => {
+    lastSpeechProgress = performance.now();
+    u._stallLimit = STALL_MS;
     if (e.name !== 'word') return;
     let idx = 0;
     for (let i = starts.length - 1; i >= 0; i--) {
@@ -1042,7 +1069,11 @@ function speakUnit(g) {
 
   let speakT0 = performance.now();
   const speakWordCount = chunk.length;
-  u.onstart = () => { speakT0 = performance.now(); };
+  u.onstart = () => {
+    speakT0 = lastSpeechProgress = performance.now();
+    u._stallLimit = Math.max(STALL_MS, estMs * 2 + 3000);
+    if (stallRetries) setStatus('Playing…', 'playing');
+  };
 
   u.onend = () => {
     if (u !== activeUtterance || !playing) return;
@@ -1070,6 +1101,7 @@ function speakUnit(g) {
     }
 
     activeUtterance = null;
+    stallRetries = 0;
     advanceFrom(sIdx);
   };
   u.onerror = (e) => {
@@ -1085,6 +1117,8 @@ function speakUnit(g) {
   };
 
   activeUtterance = u;
+  lastSpeechProgress = performance.now();
+  if (synth.paused) synth.resume();  // a paused engine queues silently
   synth.speak(u);
 }
 
