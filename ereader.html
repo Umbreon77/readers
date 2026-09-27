@@ -126,71 +126,7 @@
   }
   .font-btn:active { background: var(--accent); color: #fff; }
 
-  /* ── LIBRARY ────────────────────────────── */
-  .lib-search, .meta-input {
-    width: 100%; padding: 9px 12px;
-    background: var(--surface2); color: var(--text);
-    border: 1.5px solid var(--border); border-radius: 9px;
-    font-family: 'Lora', serif; font-size: 0.9rem; outline: none;
-    -webkit-appearance: none;
-  }
-  .lib-search { margin-bottom: 12px; }
-  .lib-search:focus, .meta-input:focus { border-color: var(--accent); }
-  .lib-search::placeholder, .meta-input::placeholder { color: var(--text-muted); font-style: italic; }
-  .meta-input { margin-bottom: 8px; }
-  .lib-empty { color: var(--text-muted); font-size: 0.8rem; font-style: italic; padding: 4px 2px; }
-
-  .grp { margin-bottom: 10px; }
-  .grp-head {
-    display: flex; align-items: center; gap: 6px; width: 100%;
-    background: none; border: none; padding: 4px 2px 6px;
-    color: var(--text-muted); cursor: pointer; text-align: left;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    -webkit-appearance: none;
-  }
-  .grp-head:hover { color: var(--text); }
-  .grp-caret { display: inline-block; transition: transform var(--tr); }
-  .grp.collapsed .grp-caret { transform: rotate(-90deg); }
-  .grp.collapsed .lib-row { display: none; }
-  .grp-count { margin-left: auto; opacity: 0.7; }
-
-  .lib-row { display: flex; flex-direction: column; gap: 7px; }
-  .book-chip {
-    display: flex; align-items: center; gap: 7px;
-    background: var(--surface2); border: 1.5px solid var(--border);
-    border-radius: 9px; padding: 7px 10px;
-    font-size: 0.8rem; cursor: pointer; max-width: 100%;
-    transition: border-color var(--tr);
-  }
-  .book-chip:hover { border-color: var(--text-muted); }
-  .book-chip.active { border-color: var(--accent); color: var(--accent); }
-  .chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-  .chip-pct {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0;
-  }
-  .chip-more {
-    background: none; border: none; color: var(--text-muted);
-    font-size: 1rem; line-height: 1; padding: 0 4px; flex-shrink: 0;
-    cursor: pointer; -webkit-appearance: none;
-  }
-  .chip-more:hover { color: var(--text); }
-  .chip-edit {
-    background: var(--surface2); border: 1.5px solid var(--accent);
-    border-radius: 9px; padding: 10px; margin-top: -2px;
-  }
-  .chip-edit-btns { display: flex; gap: 6px; }
-  .chip-edit-btns button {
-    flex: 1; padding: 7px; border-radius: 7px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text); font-family: 'Lora', serif; font-size: 0.8rem;
-    -webkit-appearance: none;
-  }
-  .chip-edit-btns .save { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .chip-edit-btns .del { color: #e05c5c; flex: 0 0 auto; padding: 7px 12px; }
-
-  /* ── DRAWER ────────────────────────────── */
+  /* ── LIBRARY DRAWER ─────────────────── */
   .drawer-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.5);
@@ -202,7 +138,7 @@
 
   .drawer {
     position: fixed; top: 0; left: 0; bottom: 0;
-    width: 85vw; max-width: 420px;
+    width: 92vw; max-width: 460px;
     background: var(--surface);
     border-right: 1px solid var(--border);
     z-index: 500;
@@ -215,15 +151,23 @@
 
   .drawer-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
   .drawer-title {
     font-family: 'Playfair Display', serif;
-    font-size: 1.1rem; font-weight: 600;
+    font-size: 1.15rem; font-weight: 600;
     color: var(--accent);
   }
+  .head-actions { display: flex; align-items: center; gap: 4px; }
+  .head-new {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    font-family: 'Lora', serif; font-size: 0.85rem;
+    -webkit-appearance: none;
+  }
+  .head-new:active { background: var(--accent2); }
   .drawer-close {
     background: none; border: none;
     color: var(--text-muted); font-size: 1.2rem;
@@ -232,55 +176,185 @@
   }
   .drawer-close:active { color: var(--text); }
 
-  .drawer-body {
-    flex: 1 1 auto; min-height: 0;
-    padding: 14px 16px 24px;
-    overflow-x: hidden; overflow-y: auto;
-    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  }
-
-  .new-btn {
-    width: 100%; padding: 12px;
-    background: var(--surface2);
-    border: 1.5px dashed var(--border);
-    border-radius: var(--radius);
-    color: var(--accent); font-family: 'Lora', serif;
-    font-size: 0.95rem; cursor: pointer;
-    margin-bottom: 14px;
-    transition: border-color var(--tr), background var(--tr);
+  .drawer-tools { padding: 12px 16px 2px; flex-shrink: 0; }
+  .lib-search, .meta-input {
+    width: 100%; padding: 9px 12px;
+    background: var(--surface2); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 9px;
+    font-family: 'Lora', serif; font-size: 0.9rem; outline: none;
     -webkit-appearance: none;
   }
-  .new-btn:active { border-color: var(--accent); border-style: solid; background: var(--surface); }
+  .lib-search:focus, .meta-input:focus { border-color: var(--accent); }
+  .lib-search::placeholder, .meta-input::placeholder { color: var(--text-muted); font-style: italic; }
 
-  .drawer-divider {
-    height: 1px; background: var(--border);
-    margin: 14px 0;
+  .grp-tabs {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 10px 0 4px;
+  }
+  .grp-tabs[hidden] { display: none; }
+  .grp-tab {
+    flex-shrink: 0; white-space: nowrap; cursor: pointer;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); border-radius: 999px; padding: 5px 12px;
+    font-family: 'Lora', serif; font-size: 0.8rem;
+    transition: color var(--tr), border-color var(--tr), background var(--tr);
+    -webkit-appearance: none;
+  }
+  .grp-tab:hover { color: var(--text); }
+  .grp-tab .n { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; opacity: 0.7; margin-left: 5px; }
+  .grp-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .drawer-body {
+    flex: 1 1 auto; min-height: 0;
+    padding: 4px 16px 16px;
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .lib-sec {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin: 16px 2px 8px;
+  }
+  .lib-sec:first-child { margin-top: 10px; }
+  .lib-empty {
+    color: var(--text-muted); font-size: 0.85rem; font-style: italic;
+    text-align: center; padding: 32px 8px; line-height: 1.6;
   }
 
+  .book-row {
+    position: relative; display: flex; align-items: center; gap: 8px;
+    padding: 11px 10px 13px 13px; margin-bottom: 8px;
+    background: var(--surface2); border: 1.5px solid transparent;
+    border-radius: 10px; cursor: pointer; overflow: hidden;
+    transition: border-color var(--tr);
+  }
+  .book-row:hover { border-color: var(--border); }
+  .book-row.active { border-color: var(--accent); }
+  .br-main { flex: 1; min-width: 0; }
+  .br-title {
+    font-family: 'Lora', serif; font-size: 0.95rem; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .book-row.active .br-title { color: var(--accent); }
+  .book-row.done .br-title { opacity: 0.6; }
+  .br-meta {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    color: var(--text-muted); margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .br-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--border); }
+  .br-fill { height: 100%; background: var(--accent); }
+  .book-row.done .br-fill { opacity: 0.45; }
+  .chip-more {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1.1rem; line-height: 1; padding: 6px 7px; border-radius: 6px;
+    flex-shrink: 0; cursor: pointer; -webkit-appearance: none;
+  }
+  .chip-more:hover { color: var(--text); background: var(--surface); }
 
+  .chip-edit {
+    background: var(--surface2); border: 1.5px solid var(--accent);
+    border-radius: 10px; padding: 10px; margin: -4px 0 8px;
+  }
+  .chip-edit .meta-input { margin-bottom: 8px; background: var(--surface); }
+  .chip-edit-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip-edit-btns button {
+    flex: 1; padding: 7px 10px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-family: 'Lora', serif; font-size: 0.8rem;
+    white-space: nowrap; -webkit-appearance: none;
+  }
+  .chip-edit-btns .save { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip-edit-btns .del { color: #e05c5c; flex: 0 0 auto; }
+
+  .drawer-footer {
+    flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+  }
+  .lib-stats {
+    flex: 1; min-width: 0; line-height: 1.5;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    color: var(--text-muted);
+  }
+  .lib-stats .warn { color: #e0a05c; }
+  .foot-btn {
+    flex-shrink: 0; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); border-radius: 7px; padding: 6px 11px;
+    font-family: 'Lora', serif; font-size: 0.78rem;
+    -webkit-appearance: none;
+  }
+  .foot-btn:hover { border-color: var(--accent); }
+
+  /* ── COMPOSE (new / edit text) ─────────── */
+  .compose-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 600; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .compose-overlay.open { opacity: 1; pointer-events: auto; }
+  .compose {
+    position: fixed; z-index: 610; left: 50%; top: 50%;
+    width: min(760px, calc(100vw - 32px)); height: min(80vh, 760px);
+    transform: translate(-50%, -47%); opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .compose.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+  .compose-body {
+    flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 16px;
+  }
+  .compose-row { display: flex; gap: 8px; }
+  .compose-row #titleInput { flex: 2; }
+  .compose-row #groupInput { flex: 1; }
   #textInput {
-    width: 100%; height: 110px;
-    min-height: 80px; max-height: 70vh;
+    flex: 1; min-height: 120px; width: 100%;
     background: var(--surface2);
     border: 1.5px dashed var(--border);
     border-radius: var(--radius);
     color: var(--text); font-family: 'Lora', serif;
     font-size: 1rem; line-height: 1.6;
-    padding: 12px 14px; resize: vertical; outline: none;
+    padding: 12px 14px; resize: none; outline: none;
     -webkit-appearance: none;
   }
   #textInput:focus { border-color: var(--accent); border-style: solid; }
   #textInput::placeholder { color: var(--text-muted); font-style: italic; }
-
+  .compose-foot {
+    flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+  }
+  .compose-count {
+    flex: 1; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem; color: var(--text-muted);
+  }
+  .ghost-btn {
+    background: none; border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius); padding: 11px 16px; cursor: pointer;
+    font-family: 'Lora', serif; font-size: 0.9rem; -webkit-appearance: none;
+  }
   .load-btn {
-    margin-top: 10px; width: 100%; padding: 13px;
+    padding: 11px 20px;
     background: var(--accent); color: #fff; border: none;
     border-radius: var(--radius); font-family: 'Playfair Display', serif;
-    font-size: 1.05rem; font-weight: 600; cursor: pointer;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
     transition: background var(--tr);
     -webkit-appearance: none;
   }
   .load-btn:active { background: var(--accent2); }
+  @media (max-width: 600px) {
+    .compose {
+      left: 0; top: 0; bottom: 0; width: 100vw; height: auto;
+      border-radius: 0; border: none; transform: translateY(24px);
+    }
+    .compose.open { transform: none; }
+    .compose-row { flex-direction: column; }
+  }
 
   /* ── READER PANE ───────────────────────── */
   .reader-wrap { padding: 12px 16px 0; }
@@ -485,18 +559,45 @@
 <div class="drawer" id="drawer">
   <div class="drawer-header">
     <span class="drawer-title">Library</span>
-    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <div class="head-actions">
+      <button class="head-new" onclick="newEntry()">+ New</button>
+      <button class="drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div class="drawer-tools">
+    <input id="libSearch" class="lib-search" type="search" placeholder="Search titles, groups, text…" oninput="renderLibrary()" autocomplete="off">
+    <div class="grp-tabs" id="grpTabs" hidden></div>
   </div>
   <div class="drawer-body">
-    <button class="new-btn" onclick="newEntry()">+ New</button>
-    <input id="libSearch" class="lib-search" type="search" placeholder="Search titles, groups, text…" oninput="renderLibrary()" autocomplete="off">
     <div id="libList"></div>
-    <datalist id="groupList"></datalist>
-    <div class="drawer-divider"></div>
-    <input id="titleInput" class="meta-input" placeholder="Title (optional — defaults to first line)" autocomplete="off">
-    <input id="groupInput" class="meta-input" list="groupList" placeholder="Group (optional)" autocomplete="off">
-    <textarea id="textInput" placeholder="Paste your text here, then tap Load…" spellcheck="false"></textarea>
-    <button class="load-btn" onclick="loadText()">Load Text →</button>
+  </div>
+  <div class="drawer-footer">
+    <div class="lib-stats" id="libStats"></div>
+    <button class="foot-btn" onclick="exportLibrary()" title="Download a backup file of your whole library">Export</button>
+    <button class="foot-btn" onclick="document.getElementById('importFile').click()" title="Add texts from a backup file">Import</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importLibrary(this)">
+  </div>
+</div>
+<datalist id="groupList"></datalist>
+
+<!-- COMPOSE: new text / edit text -->
+<div class="compose-overlay" id="composeOverlay" onclick="closeCompose()"></div>
+<div class="compose" id="compose" role="dialog" aria-labelledby="composeHeading">
+  <div class="drawer-header">
+    <span class="drawer-title" id="composeHeading">New text</span>
+    <button class="drawer-close" onclick="closeCompose()" aria-label="Close">✕</button>
+  </div>
+  <div class="compose-body">
+    <div class="compose-row">
+      <input id="titleInput" class="meta-input" placeholder="Title (optional — uses first line)" autocomplete="off">
+      <input id="groupInput" class="meta-input" list="groupList" placeholder="Group (optional)" autocomplete="off">
+    </div>
+    <textarea id="textInput" placeholder="Paste your text here…" spellcheck="false"></textarea>
+  </div>
+  <div class="compose-foot">
+    <span class="compose-count" id="composeCount">0 words</span>
+    <button class="ghost-btn" onclick="closeCompose()">Cancel</button>
+    <button class="load-btn" id="composeSave" onclick="loadText()">Save &amp; open →</button>
   </div>
 </div>
 
@@ -613,7 +714,6 @@ let lastWpmVoice = null;
 let lastHighlightWord = null;
 let lastHighlightSentence = null;
 let draftSaveTimer = null;
-let newDraft = false;
 
 // ════ BACKGROUND KEEP-ALIVE (experimental) ═
 const KEEPALIVE = true;
@@ -699,24 +799,19 @@ function openDrawer() {
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  editingBookId = null;
+  renderLibrary();  // refresh progress / "read x ago" for the open book
 }
 function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('drawerOverlay').classList.remove('open');
-  document.body.style.overflow = '';
+  if (!composeMode) document.body.style.overflow = '';
 }
 function toggleDrawer() {
   if (document.getElementById('drawer').classList.contains('open')) closeDrawer();
   else openDrawer();
 }
-function newEntry() {
-  newDraft = true;
-  openDrawer();
-  document.getElementById('textInput').value = '';
-  clearMetaInputs();
-  try { localStorage.removeItem('vox_text'); } catch (e) {}
-  setTimeout(() => document.getElementById('textInput').focus(), 350);
-}
+function newEntry() { openCompose('new'); }
 
 // ════════════════════════════════════════
 // VOICES — fixed 3-voice grid
@@ -852,101 +947,142 @@ function makeTitle(text) {
   return line.replace(/[#*_`>\[\]|]/g, '').trim().slice(0, 42) || 'Untitled';
 }
 
-function clearMetaInputs() {
-  document.getElementById('titleInput').value = '';
-  document.getElementById('groupInput').value = '';
-}
-// Title/group typed in the paste area; empty fields mean "leave as is".
-function applyMetaInputs(book) {
-  const t = document.getElementById('titleInput').value.trim();
-  const g = document.getElementById('groupInput').value.trim();
-  if (t) { book.title = t.slice(0, 120); book.customTitle = true; }
-  if (g) book.group = g.slice(0, 60);
-  clearMetaInputs();
-}
+// ════ LIBRARY LIST ═══════════════════════
+const UNGROUPED = '\x00ungrouped';
+let editingBookId = null;
+let libTab = localStorage.getItem('vox_lib_tab') || '';  // '' = All
 
-function getCollapsed() {
-  try { return new Set(JSON.parse(localStorage.getItem('vox_collapsed') || '[]')); }
-  catch (e) { return new Set(); }
+function bookPos(b) { return b.id === curBookId && words.length ? curWord : getPos(b.id); }
+function bookPct(b) {
+  return b.words ? Math.min(100, Math.round(bookPos(b) / Math.max(b.words - 1, 1) * 100)) : 0;
 }
-function toggleGroup(name) {
-  const c = getCollapsed();
-  c.has(name) ? c.delete(name) : c.add(name);
-  try { localStorage.setItem('vox_collapsed', JSON.stringify([...c])); } catch (e) {}
+function fmtMins(m) {
+  m = Math.max(1, Math.round(m));
+  return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
+}
+function fmtAgo(t) {
+  const sec = (Date.now() - t) / 1000;
+  if (sec < 90) return 'just now';
+  if (sec < 3600) return Math.round(sec / 60) + ' min ago';
+  if (sec < 86400) return Math.round(sec / 3600) + ' h ago';
+  const d = Math.round(sec / 86400);
+  if (d === 1) return 'yesterday';
+  if (d < 7) return d + ' days ago';
+  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function setLibTab(t) {
+  libTab = t;
+  try { localStorage.setItem('vox_lib_tab', t); } catch (e) {}
+  editingBookId = null;
   renderLibrary();
 }
 
-let editingBookId = null;
-
 function renderLibrary() {
-  const list = document.getElementById('libList');
-  const q = document.getElementById('libSearch').value.trim().toLowerCase();
   const books = getBooks();
-  list.innerHTML = '';
+  const q = document.getElementById('libSearch').value.trim().toLowerCase();
+  const groups = [...new Set(books.map(b => b.group).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const ungroupedN = books.filter(b => !b.group).length;
+  if (libTab === UNGROUPED ? !(groups.length && ungroupedN) : libTab && !groups.includes(libTab)) libTab = '';
 
-  const groupNames = [...new Set(books.map(b => b.group).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b));
   const dl = document.getElementById('groupList');
   dl.innerHTML = '';
-  groupNames.forEach(g => { const o = document.createElement('option'); o.value = g; dl.appendChild(o); });
+  groups.forEach(g => { const o = document.createElement('option'); o.value = g; dl.appendChild(o); });
 
-  const shown = q
-    ? books.filter(b => (b.title + ' ' + (b.group || '') + ' ' + b.text).toLowerCase().includes(q))
-    : books;
-  if (!shown.length) {
-    list.innerHTML = `<div class="lib-empty">${q ? 'No matches.' : 'No saved texts yet.'}</div>`;
-    return;
+  const tabs = document.getElementById('grpTabs');
+  tabs.innerHTML = '';
+  const addTab = (key, label, n) => {
+    const t = document.createElement('button');
+    t.className = 'grp-tab' + (libTab === key ? ' active' : '');
+    t.innerHTML = '<span></span><span class="n">' + n + '</span>';
+    t.firstChild.textContent = label;
+    t.addEventListener('click', () => setLibTab(key));
+    tabs.appendChild(t);
+  };
+  if (groups.length) {
+    addTab('', 'All', books.length);
+    groups.forEach(g => addTab(g, g, books.filter(b => b.group === g).length));
+    if (ungroupedN) addTab(UNGROUPED, 'Ungrouped', ungroupedN);
   }
+  tabs.hidden = !groups.length || !!q;
 
-  const byGroup = new Map();
-  shown.forEach(b => {
-    const g = b.group || '';
-    if (!byGroup.has(g)) byGroup.set(g, []);
-    byGroup.get(g).push(b);
-  });
-  const order = groupNames.filter(g => byGroup.has(g));
-  if (byGroup.has('')) order.push('');
-  const collapsed = getCollapsed();
-  const showHeads = groupNames.length > 0;
+  const inTab = b => !libTab || (libTab === UNGROUPED ? !b.group : b.group === libTab);
+  const shown = books
+    .filter(b => q ? (b.title + ' ' + (b.group || '') + ' ' + b.text).toLowerCase().includes(q) : inTab(b))
+    .sort((a, b) => (b.opened || b.added) - (a.opened || a.added));
+  const showGroup = !libTab || !!q;
 
-  order.forEach(g => {
-    const sec = document.createElement('div');
-    sec.className = 'grp' + (showHeads && !q && collapsed.has(g) ? ' collapsed' : '');
-    const items = byGroup.get(g).sort((a, b) => (b.opened || b.added) - (a.opened || a.added));
-    if (showHeads) {
-      const head = document.createElement('button');
-      head.className = 'grp-head';
-      head.innerHTML = `<span class="grp-caret">▾</span><span class="grp-name"></span><span class="grp-count">${items.length}</span>`;
-      head.querySelector('.grp-name').textContent = g || 'Ungrouped';
-      head.addEventListener('click', () => toggleGroup(g));
-      sec.appendChild(head);
+  const list = document.getElementById('libList');
+  list.innerHTML = '';
+  const section = (label, items) => {
+    if (label) {
+      const h = document.createElement('div');
+      h.className = 'lib-sec';
+      h.textContent = label;
+      list.appendChild(h);
     }
-    const row = document.createElement('div');
-    row.className = 'lib-row';
-    items.forEach(b => row.appendChild(bookChip(b)));
-    sec.appendChild(row);
-    list.appendChild(sec);
-  });
+    items.forEach(b => list.appendChild(bookRow(b, showGroup)));
+  };
+  if (!shown.length) {
+    list.innerHTML = '<div class="lib-empty"></div>';
+    list.firstChild.textContent = q ? 'No matches.'
+      : books.length ? 'Nothing in this group yet.'
+      : 'Your library is empty.\nTap + New to add a text.';
+    list.firstChild.style.whiteSpace = 'pre-line';
+  } else if (!q && !libTab && shown.length > 4) {
+    const cont = shown.filter(b => bookPos(b) > 0 && bookPct(b) < 99).slice(0, 3);
+    if (cont.length) {
+      section('Continue reading', cont);
+      section('All texts', shown.filter(b => !cont.includes(b)));
+    } else section(null, shown);
+  } else section(null, shown);
+
+  renderLibStats(books);
 }
 
-function bookChip(b) {
+function renderLibStats(books) {
+  let chars = 0;
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); chars += k.length + (localStorage.getItem(k) || '').length; } }
+  catch (e) {}
+  const pct = Math.round(chars / 5e6 * 100);  // browsers allow ~5M chars per site
+  const last = parseInt(localStorage.getItem('vox_last_export') || '0', 10);
+  const el = document.getElementById('libStats');
+  el.innerHTML = '';
+  const line1 = document.createElement('div');
+  line1.textContent = books.length + (books.length === 1 ? ' text' : ' texts') + ' · ' + Math.max(pct, books.length ? 1 : 0) + '% of storage';
+  if (pct >= 70) line1.className = 'warn';
+  const line2 = document.createElement('div');
+  line2.textContent = last ? 'Backed up ' + fmtAgo(last) : 'Not backed up yet';
+  if (books.length && (!last || Date.now() - last > 14 * 86400000)) line2.className = 'warn';
+  el.append(line1, line2);
+}
+
+function bookRow(b, showGroup) {
   const frag = document.createDocumentFragment();
-  const pct = Math.min(100, Math.round((getPos(b.id) / (b.words || 1)) * 100));
-  const chip = document.createElement('div');
-  chip.className = 'book-chip' + (b.id === curBookId ? ' active' : '');
-  chip.innerHTML = `
-    <span class="chip-title"></span>
-    <span class="chip-pct">${pct}%</span>
-    <button class="chip-more" title="Rename, group, delete">⋯</button>`;
-  chip.querySelector('.chip-title').textContent = b.title;
-  chip.title = b.title;
-  chip.addEventListener('click', () => openBook(b.id));
-  chip.querySelector('.chip-more').addEventListener('click', (ev) => {
+  const pos = bookPos(b), pct = bookPct(b);
+  const done = pos > 0 && pct >= 99;
+  const row = document.createElement('div');
+  row.className = 'book-row' + (b.id === curBookId ? ' active' : '') + (done ? ' done' : '');
+  row.innerHTML = `
+    <div class="br-main"><div class="br-title"></div><div class="br-meta"></div></div>
+    <button class="chip-more" title="Rename, group, edit, delete" aria-label="More">⋯</button>
+    <div class="br-bar"><div class="br-fill" style="width:${pct}%"></div></div>`;
+  row.querySelector('.br-title').textContent = b.title;
+  row.title = b.title;
+  const wpm = measuredWpm || 175 * speechRate;
+  const bits = [];
+  if (showGroup && b.group) bits.push(b.group);
+  if (done) bits.push('✓ Finished');
+  else if (pos > 0) bits.push(pct + '% · ' + fmtMins((b.words - pos) / wpm) + ' left');
+  else bits.push('~' + fmtMins((b.words || 1) / wpm));
+  bits.push(b.opened ? fmtAgo(b.opened) : 'added ' + fmtAgo(b.added));
+  row.querySelector('.br-meta').textContent = bits.join(' · ');
+  row.addEventListener('click', () => openBook(b.id));
+  row.querySelector('.chip-more').addEventListener('click', (ev) => {
     ev.stopPropagation();
     editingBookId = editingBookId === b.id ? null : b.id;
     renderLibrary();
   });
-  frag.appendChild(chip);
+  frag.appendChild(row);
   if (editingBookId === b.id) frag.appendChild(editPanel(b));
   return frag;
 }
@@ -955,10 +1091,11 @@ function editPanel(b) {
   const p = document.createElement('div');
   p.className = 'chip-edit';
   p.innerHTML = `
-    <input class="meta-input e-title" placeholder="Title" autocomplete="off">
+    <input class="meta-input e-title" placeholder="Title (blank = first line)" autocomplete="off">
     <input class="meta-input e-group" list="groupList" placeholder="Group (blank = ungrouped)" autocomplete="off">
     <div class="chip-edit-btns">
-      <button class="save">Save</button><button class="cancel">Cancel</button><button class="del">Delete</button>
+      <button class="save">Save</button><button class="edit">Edit text</button>
+      <button class="cancel">Cancel</button><button class="del">Delete</button>
     </div>`;
   const ti = p.querySelector('.e-title'), gi = p.querySelector('.e-group');
   ti.value = b.title; gi.value = b.group || '';
@@ -972,14 +1109,13 @@ function editPanel(b) {
     const g = gi.value.trim().slice(0, 60);
     if (g) book.group = g; else delete book.group;
     if (!saveBooks(books)) { setStatus('Storage full — changes not saved', ''); return; }
-    if (book.id === curBookId && KEEPALIVE && 'mediaSession' in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: 'Vox Reader' });
-    }
+    if (book.id === curBookId) setMediaTitle(book.title);
     editingBookId = null;
     renderLibrary();
   };
   const cancel = () => { editingBookId = null; renderLibrary(); };
   p.querySelector('.save').addEventListener('click', save);
+  p.querySelector('.edit').addEventListener('click', () => openCompose(b.id));
   p.querySelector('.cancel').addEventListener('click', cancel);
   p.querySelector('.del').addEventListener('click', (ev) => deleteBook(b.id, ev));
   p.addEventListener('keydown', (e) => {
@@ -1004,57 +1140,151 @@ function deleteBook(id, ev) {
   renderLibrary();
 }
 
-// "Load Text" button: dedupes, updates in place, or creates a new book.
+function setMediaTitle(title) {
+  if (KEEPALIVE && 'mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title, artist: 'Vox Reader' });
+  }
+}
+
+// ════ BACKUP ═════════════════════════════
+function exportLibrary() {
+  const books = getBooks();
+  if (!books.length) { setStatus('Library is empty — nothing to export', ''); return; }
+  savePos();
+  const positions = {};
+  books.forEach(b => { positions[b.id] = getPos(b.id); });
+  const data = { app: 'vox-reader', version: 1, exported: new Date().toISOString(), books, positions };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  a.download = 'vox-library-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  try { localStorage.setItem('vox_last_export', String(Date.now())); } catch (e) {}
+  setStatus('Exported ' + books.length + ' texts', '');
+  renderLibrary();
+}
+
+// Merge a backup into the library: adds texts it doesn't already have
+// (same id or identical text = skipped), never overwrites or deletes.
+async function importLibrary(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { data = null; }
+  const incoming = data && Array.isArray(data.books)
+    ? data.books.filter(b => b && typeof b.id === 'string' && typeof b.text === 'string' && b.text.trim())
+    : null;
+  if (!incoming) { setStatus('Import failed — not a Vox library file', ''); return; }
+  const books = getBooks();
+  const ids = new Set(books.map(b => b.id)), texts = new Set(books.map(b => b.text));
+  const added = [];
+  incoming.forEach(b => {
+    if (ids.has(b.id) || texts.has(b.text)) return;
+    const nb = {
+      id: b.id, text: b.text,
+      title: String(b.title || makeTitle(b.text)).slice(0, 120),
+      words: +b.words || b.text.trim().split(/\s+/).length,
+      added: +b.added || Date.now(),
+    };
+    if (b.opened) nb.opened = +b.opened;
+    if (b.group) nb.group = String(b.group).slice(0, 60);
+    if (b.customTitle) nb.customTitle = true;
+    books.push(nb); ids.add(nb.id); texts.add(nb.text); added.push(nb);
+  });
+  if (!added.length) { setStatus('Nothing new to import — all ' + incoming.length + ' texts already here', ''); return; }
+  if (!saveBooks(books)) { setStatus('Import failed — storage full', ''); return; }
+  added.forEach(b => {
+    const p = data.positions && +data.positions[b.id];
+    if (p > 0) try { localStorage.setItem('vox_pos_' + b.id, String(p)); } catch (e) {}
+  });
+  const skipped = incoming.length - added.length;
+  setStatus('Imported ' + added.length + ' texts' + (skipped ? ' (' + skipped + ' already here)' : ''), '');
+  renderLibrary();
+}
+
+// ════ COMPOSE (new / edit text) ══════════
+let composeMode = null;  // null | 'new' | <book id being edited>
+
+function openCompose(mode) {
+  const ti = document.getElementById('titleInput');
+  const gi = document.getElementById('groupInput');
+  const ta = document.getElementById('textInput');
+  if (mode === 'new') {
+    ti.value = '';
+    gi.value = libTab && libTab !== UNGROUPED ? libTab : '';
+    let draft = '';
+    try { draft = localStorage.getItem('vox_text') || ''; } catch (e) {}
+    ta.value = draft;
+    document.getElementById('composeHeading').textContent = 'New text';
+    document.getElementById('composeSave').textContent = 'Save & open →';
+  } else {
+    const b = getBooks().find(x => x.id === mode);
+    if (!b) return;
+    ti.value = b.customTitle ? b.title : '';
+    gi.value = b.group || '';
+    ta.value = b.text;
+    document.getElementById('composeHeading').textContent = 'Edit text';
+    document.getElementById('composeSave').textContent = 'Save changes →';
+  }
+  composeMode = mode;
+  updateComposeCount();
+  document.getElementById('compose').classList.add('open');
+  document.getElementById('composeOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { ta.focus(); if (mode !== 'new') ta.setSelectionRange(0, 0); ta.scrollTop = 0; }, 60);
+}
+function closeCompose() {
+  composeMode = null;
+  document.getElementById('compose').classList.remove('open');
+  document.getElementById('composeOverlay').classList.remove('open');
+  if (!document.getElementById('drawer').classList.contains('open')) document.body.style.overflow = '';
+}
+function updateComposeCount() {
+  const t = document.getElementById('textInput').value.trim();
+  const n = t ? t.split(/\s+/).length : 0;
+  document.getElementById('composeCount').textContent =
+    n.toLocaleString() + ' words' + (n ? ' · ~' + fmtMins(n / (175 * speechRate)) : '');
+}
+
+// Compose "Save": edit updates that book; new reuses an identical paste
+// already in the library, otherwise creates a book.
 function loadText() {
   const raw = document.getElementById('textInput').value;
-  if (!raw.trim()) return;
+  if (!raw.trim()) { document.getElementById('textInput').focus(); return; }
+  const t = document.getElementById('titleInput').value.trim().slice(0, 120);
+  const g = document.getElementById('groupInput').value.trim().slice(0, 60);
+  const editing = composeMode && composeMode !== 'new';
   const books = getBooks();
-  const existing = books.find(b => b.text === raw);
-  if (existing) {
-    applyMetaInputs(existing);
-    saveBooks(books);
-    openBook(existing.id);
-    newDraft = false;
-    return;
+  let book = editing ? books.find(b => b.id === composeMode) : books.find(b => b.text === raw);
+  if (editing && !book) { closeCompose(); return; }
+  if (!book) {
+    book = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), words: 0, added: Date.now() };
+    books.unshift(book);
   }
-  if (curBookId && !newDraft) {
-    const book = books.find(b => b.id === curBookId);
-    if (book && makeTitle(raw) === makeTitle(book.text)) {
-      book.text = raw;
-      if (!book.customTitle) book.title = makeTitle(raw);
-      applyMetaInputs(book);
-      buildReader(raw);
-      book.words = words.length;
-      if (!saveBooks(books)) {
-        setStatus('Storage full — book not saved', '');
-        return;
-      }
-      try { localStorage.setItem('vox_pos_' + book.id, '0'); } catch (e) {}
-      finishOpen(book, 0);
-      setStatus('Updated "' + book.title + '"', '');
-      newDraft = false;
-      return;
-    }
-  }
-  const book = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    title: makeTitle(raw),
-    text: raw,
-    words: 0,
-    added: Date.now(),
-  };
-  applyMetaInputs(book);
-  books.unshift(book);
+  book.text = raw;
+  if (t) { book.title = t; book.customTitle = true; }
+  else if (editing || !book.customTitle) { book.title = makeTitle(raw); book.customTitle = false; }
+  if (g) book.group = g; else if (editing) delete book.group;
+  book.opened = Date.now();
+
+  const prevId = curBookId;
+  stopReading();
   curBookId = book.id;
   buildReader(raw);
   book.words = words.length;
   if (!saveBooks(books)) {
-    setStatus('Storage full — book not saved', '');
-    curBookId = null;
+    setStatus('Storage full — export a backup, then delete old texts', '');
+    curBookId = prevId;
     return;
   }
-  finishOpen(book, 0);
-  newDraft = false;
+  if (!editing) { try { localStorage.removeItem('vox_text'); } catch (e) {} }
+  closeCompose();
+  const pos = getPos(book.id);
+  finishOpen(book, pos < words.length ? pos : 0);
+  if (editing) setStatus('Saved changes to "' + book.title + '"', '');
 }
 
 function openBook(id) {
@@ -1065,9 +1295,6 @@ function openBook(id) {
   saveBooks(books);
   stopReading();
   curBookId = id;
-  newDraft = false;
-  clearMetaInputs();
-  document.getElementById('textInput').value = book.text;
   buildReader(book.text);
   const pos = getPos(id);
   finishOpen(book, (pos >= 0 && pos < words.length) ? pos : 0);
@@ -1075,9 +1302,7 @@ function openBook(id) {
 
 function finishOpen(book, startWord) {
   try { localStorage.setItem('vox_last_book', book.id); } catch (e) {}
-  if (KEEPALIVE && 'mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({ title: book.title, artist: 'Vox Reader' });
-  }
+  setMediaTitle(book.title);
   curWord = startWord;
   if (words.length) {
     highlightWord(curWord);
@@ -1193,7 +1418,7 @@ function buildReader(text) {
 // engine death on long documents.
 // ════════════════════════════════════════
 function togglePlay() {
-  if (!words.length) { loadText(); if (!words.length) return; }
+  if (!words.length) { newEntry(); return; }
   if (wantPlaying) { pauseReading(); return; }
   wantPlaying = true;
   stallRetries = 0;
@@ -1445,7 +1670,8 @@ function updateProgress(force) {
 // META / READ TIME
 // ════════════════════════════════════════
 document.getElementById('textInput').addEventListener('input', () => {
-  updateMeta();
+  updateComposeCount();
+  if (composeMode !== 'new') return;  // only unsaved new pastes are drafts
   if (draftSaveTimer) clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(() => {
     const v = document.getElementById('textInput').value;
@@ -1454,21 +1680,13 @@ document.getElementById('textInput').addEventListener('input', () => {
 });
 
 function updateMeta() {
-  const wc = words.length ||
-    (document.getElementById('textInput').value.trim()
-      ? document.getElementById('textInput').value.trim().split(/\s+/).length : 0);
+  const wc = words.length;
   document.getElementById('wordCount').textContent = wc.toLocaleString() + ' words';
   updateReadTime();
 }
 
 function updateReadTime() {
-  let wc;
-  if (words.length) {
-    wc = Math.max(words.length - curWord, 0);
-  } else {
-    const t = document.getElementById('textInput').value.trim();
-    wc = t ? t.split(/\s+/).length : 0;
-  }
+  const wc = Math.max(words.length - curWord, 0);
   const BASE_WPM = 175;
   const effectiveWpm = measuredWpm || (BASE_WPM * speechRate);
   const mins = Math.ceil(wc / effectiveWpm);
@@ -1530,8 +1748,17 @@ function applyPositionGradient(pct) {
 // KEYBOARD SHORTCUTS
 // ════════════════════════════════════════
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (composeMode) {
+    if (e.key === 'Escape') closeCompose();
+    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); loadText(); }
+    return;
+  }
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+    if (e.key === 'Escape') closeDrawer();
+    return;
+  }
   if (e.key === 'Escape') { closeDrawer(); return; }
+  if (e.key === 'l' || e.key === 'L') { toggleDrawer(); return; }
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
   else if (e.key === 'ArrowLeft')  { skipSentence(-1); }
   else if (e.key === 'ArrowRight') { skipSentence(1); }
@@ -1596,8 +1823,6 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
   if (lastId && getBooks().some(b => b.id === lastId)) {
     openBook(lastId);
   } else {
-    const draft = localStorage.getItem('vox_text');
-    if (draft) document.getElementById('textInput').value = draft;
     updateMeta();
   }
 })();
