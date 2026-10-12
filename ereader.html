@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-  :root {
+  :root, .theme-dark {
     --bg: #0e0c0a;
     --surface: #1a1714;
     --surface2: #231f1b;
@@ -31,6 +31,27 @@
     --on-accent: #fff;
   }
   .theme-sepia {
+    --bg: #f4ecd8; --surface: #faf4e6; --surface2: #ece1c6;
+    --border: #d8c8a4; --text: #5b4636; --text-muted: #8a7356;
+    --accent: #9a5a28; --accent2: #aa6832;
+    --hl-word: #7f3a10; --hl-sentence: rgba(154,90,40,0.13);
+    --on-accent: #fff;
+  }
+  .theme-parchment {
+    --bg: #e6d9bc; --surface: #efe5cd; --surface2: #ddcdaa;
+    --border: #c6b28a; --text: #463626; --text-muted: #76634a;
+    --accent: #87552a; --accent2: #976232;
+    --hl-word: #72300e; --hl-sentence: rgba(135,85,42,0.15);
+    --on-accent: #fff;
+  }
+  .theme-sage {
+    --bg: #e1e7da; --surface: #ecf0e6; --surface2: #d7dfcd;
+    --border: #bcc8ae; --text: #33402e; --text-muted: #647260;
+    --accent: #4a7341; --accent2: #57824d;
+    --hl-word: #2c5a24; --hl-sentence: rgba(74,115,65,0.14);
+    --on-accent: #fff;
+  }
+  .theme-mocha {
     --bg: #2a2218; --surface: #322919; --surface2: #3c3121;
     --border: #4a3e2c; --text: #e8d8bc; --text-muted: #9a8860;
     --accent: #d4a060; --accent2: #e0b070;
@@ -105,28 +126,59 @@
     padding: 4px 7px;
   }
 
-  .theme-switcher { display: flex; gap: 4px; }
-  .theme-btn {
-    width: 17px; height: 17px; border-radius: 50%;
-    border: 2px solid var(--border); cursor: pointer;
-    transition: border-color var(--tr);
-  }
-  .theme-btn.dark   { background: #1a1714; }
-  .theme-btn.light  { background: #f4efe8; }
-  .theme-btn.sepia  { background: #322919; }
-  .theme-btn.slate  { background: #161b22; }
-  .theme-btn.forest { background: #112011; }
-  .theme-btn.ocean  { background: #0c1b30; }
-  .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-
-  .font-controls { display: flex; gap: 4px; }
-  .font-btn {
+  .aa-btn {
     background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); width: 27px; height: 27px;
-    border-radius: 7px; cursor: pointer; font-size: 0.75rem;
-    display: flex; align-items: center; justify-content: center;
+    color: var(--text); height: 30px; min-width: 40px; padding: 0 10px;
+    border-radius: 8px; cursor: pointer;
+    font-family: 'Playfair Display', serif; font-size: 0.95rem;
+    -webkit-appearance: none;
   }
-  .font-btn:active { background: var(--accent); color: var(--on-accent); }
+  .aa-btn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+
+  /* ── DISPLAY MENU (text size + theme) ─── */
+  .display-menu {
+    position: fixed; z-index: 350;
+    top: calc(var(--header-h) + 6px); right: 10px;
+    width: min(320px, calc(100vw - 20px));
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: 0 14px 40px rgba(0,0,0,0.35);
+    padding: 12px 14px 14px;
+  }
+  .display-menu[hidden] { display: none; }
+  .dm-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin: 2px 0 8px;
+  }
+  .dm-size { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .dm-step {
+    flex: 1; height: 40px; cursor: pointer;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; font-size: 0.95rem;
+    -webkit-appearance: none;
+  }
+  .dm-step:active { border-color: var(--accent); }
+  .dm-size-val {
+    min-width: 54px; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted);
+  }
+  .dm-themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  /* Each tile carries its own theme class, so it previews that theme's colours */
+  .theme-tile {
+    position: relative; height: 58px; cursor: pointer;
+    background: var(--surface); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    -webkit-appearance: none;
+  }
+  .theme-tile .tt-aa { font-family: 'Lora', serif; font-size: 1.05rem; line-height: 1; }
+  .theme-tile .tt-aa i { font-style: normal; color: var(--accent); }
+  .theme-tile .tt-name { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; color: var(--text-muted); }
+  .theme-tile.active { border: 2px solid var(--accent); }
+  .theme-tile.active::after {
+    content: '✓'; position: absolute; top: 3px; right: 6px;
+    font-size: 0.7rem; color: var(--accent);
+  }
 
   /* ── LIBRARY DRAWER ─────────────────── */
   .drawer-overlay {
@@ -554,21 +606,22 @@
     <div class="logo">Vox <span>Reader</span></div>
   </div>
   <div class="header-right">
-    <div class="font-controls">
-      <button class="font-btn" onclick="changeFontSize(-1)">A−</button>
-      <button class="font-btn" onclick="changeFontSize(1)">A+</button>
-    </div>
-    <div class="theme-switcher">
-      <div class="theme-btn dark"   onclick="setTheme('dark',this)"></div>
-      <div class="theme-btn light"  onclick="setTheme('light',this)"></div>
-      <div class="theme-btn sepia"  onclick="setTheme('sepia',this)"></div>
-      <div class="theme-btn slate"  onclick="setTheme('slate',this)"></div>
-      <div class="theme-btn forest" onclick="setTheme('forest',this)"></div>
-      <div class="theme-btn ocean"  onclick="setTheme('ocean',this)"></div>
-    </div>
+    <button class="aa-btn" id="aaBtn" onclick="toggleDisplayMenu()" aria-label="Text size and theme" aria-expanded="false" aria-controls="displayMenu">Aa</button>
     <a class="rsvp-link" href="rsvp-reader.html?v=5">RSVP</a>
   </div>
 </header>
+
+<!-- DISPLAY MENU -->
+<div class="display-menu" id="displayMenu" hidden>
+  <div class="dm-label">Text size</div>
+  <div class="dm-size">
+    <button class="dm-step" onclick="changeFontSize(-1)" aria-label="Smaller text">A−</button>
+    <span class="dm-size-val" id="fontSizeVal">17 px</span>
+    <button class="dm-step" onclick="changeFontSize(1)" aria-label="Larger text">A+</button>
+  </div>
+  <div class="dm-label">Theme</div>
+  <div class="dm-themes" id="themeGrid"></div>
+</div>
 
 <!-- LIBRARY DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
@@ -694,6 +747,14 @@ let curBookId = null;
 let speechRate = parseFloat(localStorage.getItem('vox_speed') || '1.0');
 let fontSize   = parseInt(localStorage.getItem('vox_fontSize') || '17', 10);
 let currentTheme = localStorage.getItem('vox_theme') || 'dark';
+// "sepia" used to be the dark brown theme (now "mocha"); vox_theme_rev marks
+// stored values that already use the new names.
+if (currentTheme === 'sepia' && !localStorage.getItem('vox_theme_rev')) currentTheme = 'mocha';
+const THEMES = [
+  ['light', 'Light'], ['sepia', 'Sepia'], ['parchment', 'Parchment'],
+  ['sage', 'Sage'], ['dark', 'Dark'], ['mocha', 'Mocha'],
+  ['slate', 'Slate'], ['forest', 'Forest'], ['ocean', 'Ocean'],
+];
 let synth = window.speechSynthesis;
 let pendingRestartTimer = null;
 let posSliderActive = false;
@@ -815,6 +876,7 @@ function restartAt(g, delayMs) {
 // DRAWER
 // ════════════════════════════════════════
 function openDrawer() {
+  toggleDisplayMenu(false);
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1797,17 +1859,42 @@ function updateSpeedCommit(val) {
 function changeFontSize(delta) {
   fontSize = Math.max(12, Math.min(30, fontSize + delta));
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
+  document.getElementById('fontSizeVal').textContent = fontSize + ' px';
   try { localStorage.setItem('vox_fontSize', fontSize); } catch (e) {}
 }
 
-function setTheme(name, el) {
+function setTheme(name) {
+  if (!THEMES.some(t => t[0] === name)) name = 'dark';
   currentTheme = name;
-  document.body.classList.remove('theme-light', 'theme-sepia', 'theme-slate', 'theme-forest', 'theme-ocean');
+  THEMES.forEach(([k]) => document.body.classList.remove('theme-' + k));
   if (name !== 'dark') document.body.classList.add('theme-' + name);
-  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  try { localStorage.setItem('vox_theme', name); } catch (e) {}
+  document.querySelectorAll('.theme-tile').forEach(t => t.classList.toggle('active', t.dataset.theme === name));
+  try { localStorage.setItem('vox_theme', name); localStorage.setItem('vox_theme_rev', '2'); } catch (e) {}
 }
+
+// ════ DISPLAY MENU ═══════════════════════
+function renderThemeGrid() {
+  const grid = document.getElementById('themeGrid');
+  THEMES.forEach(([key, label]) => {
+    const t = document.createElement('button');
+    t.className = 'theme-tile theme-' + key;
+    t.dataset.theme = key;
+    t.setAttribute('aria-label', label + ' theme');
+    t.innerHTML = '<span class="tt-aa">A<i>a</i></span><span class="tt-name"></span>';
+    t.querySelector('.tt-name').textContent = label;
+    t.addEventListener('click', () => setTheme(key));
+    grid.appendChild(t);
+  });
+}
+function displayMenuOpen() { return !document.getElementById('displayMenu').hidden; }
+function toggleDisplayMenu(force) {
+  const open = force !== undefined ? force : !displayMenuOpen();
+  document.getElementById('displayMenu').hidden = !open;
+  document.getElementById('aaBtn').setAttribute('aria-expanded', String(open));
+}
+document.addEventListener('click', (e) => {
+  if (displayMenuOpen() && !e.target.closest('#displayMenu, #aaBtn')) toggleDisplayMenu(false);
+});
 
 // Messages from the library/compose land here: the status row sits under
 // the drawer, so anything said while it's open would go unseen.
@@ -1852,7 +1939,7 @@ document.addEventListener('keydown', (e) => {
   }
   // (A focused Speed/Position slider falls through: arrows/Space stay
   // playback shortcuts instead of nudging the slider.)
-  if (e.key === 'Escape') { closeDrawer(); return; }
+  if (e.key === 'Escape') { if (displayMenuOpen()) toggleDisplayMenu(false); else closeDrawer(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === 'l' || e.key === 'L') { toggleDrawer(); return; }
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -1896,8 +1983,10 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
 // INIT — restore persisted state
 // ════════════════════════════════════════
 (function () {
-  setTheme(currentTheme, document.querySelector('.theme-btn.' + currentTheme));
+  renderThemeGrid();
+  setTheme(currentTheme);
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
+  document.getElementById('fontSizeVal').textContent = fontSize + ' px';
   const ss = document.getElementById('speedSlider');
   ss.value = speechRate;
   document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
