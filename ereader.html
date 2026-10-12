@@ -626,8 +626,7 @@
     border-top: 1px solid var(--border);
   }
 
-  .voice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
-  @media (max-width: 380px) { .voice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .voice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .voice-option {
     display: flex; align-items: center; gap: 8px;
     padding: 10px 9px;
@@ -815,6 +814,7 @@
     <div class="status-dot" id="statusDot"></div>
     <span id="statusText">Ready</span>
     <div class="status-tools">
+      <button class="tool-btn" onclick="newEntry()" title="Add a new text">+ New</button>
       <button class="tool-btn" id="chaptersBtn" onclick="renderChapters(); toggleMenu('chaptersMenu')" aria-expanded="false" hidden>Chapters</button>
       <button class="tool-btn" id="sleepBtn" onclick="renderSleepMenu(); toggleMenu('sleepMenu')" aria-expanded="false">☾ Sleep</button>
       <div class="ctrl-menu chapters-menu" id="chaptersMenu" hidden></div>
@@ -1056,7 +1056,6 @@ function newEntry() { openCompose('new'); }
 const PREFERRED = [
   { name: 'Nicky',    gender: '♀', color: '#e87cb0', bg: '#4a1e35' },
   { name: 'Samantha', gender: '♀', color: '#4f9de8', bg: '#1a3050' },
-  { name: 'Daniel',   gender: '♂', color: '#e0a05c', bg: '#3d2a14' },  // British; Aaron was removed from macOS
 ];
 let voiceMap = {};   // name -> best matching SpeechSynthesisVoice
 let selectedVoiceName = localStorage.getItem('vox_voice_name') || '';
@@ -1106,7 +1105,7 @@ function unavailReason(name) {
   return 'Not installed on this Mac';
 }
 function unavailDetail(name) {
-  if (IS_IOS && name === 'Nicky') return 'Nicky works in iOS Speak Selection, but Apple blocks it for ALL web apps. Use Samantha or Daniel here, or Speak Selection in Obsidian for Nicky.';
+  if (IS_IOS && name === 'Nicky') return 'Nicky works in iOS Speak Selection, but Apple blocks it for ALL web apps. Use Samantha here, or Speak Selection in Obsidian for Nicky.';
   if (IS_IOS) return name + ' isn\'t available to web apps on this iPhone.';
   return name + ': download it in System Settings → Accessibility → Spoken Content → Manage Voices, then fully restart the browser.';
 }
@@ -1134,7 +1133,7 @@ function renderVoiceGrid() {
   const note = document.getElementById('voiceNote');
   if (!anyAvailable) {
     note.style.display = 'block';
-    note.textContent = 'None of your 3 voices exist on this device — using the system default voice.';
+    note.textContent = 'None of your voices exist on this device — using the system default voice.';
   } else {
     note.style.display = 'none';
   }
