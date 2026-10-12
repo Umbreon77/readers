@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Vox Reader</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root, .theme-dark {
     --bg: #0e0c0a;
@@ -153,7 +153,16 @@
     padding: 12px 14px 14px;
   }
   .display-menu[hidden] { display: none; }
-  .display-menu.size-menu { width: min(260px, calc(100vw - 20px)); }
+  .font-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .dm-label-gap { margin-top: 14px; }
+  .font-tile {
+    height: 46px; cursor: pointer; padding: 0 4px;
+    background: var(--surface2); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 9px;
+    font-size: 0.9rem; line-height: 1.1;
+    -webkit-appearance: none;
+  }
+  .font-tile.active { border: 2px solid var(--accent); color: var(--accent); }
   .dm-label {
     font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
     letter-spacing: 0.1em; text-transform: uppercase;
@@ -621,13 +630,15 @@
 </header>
 
 <!-- HEADER MENUS: text size, theme -->
-<div class="display-menu size-menu" id="sizeMenu" hidden>
+<div class="display-menu" id="sizeMenu" hidden>
   <div class="dm-label">Text size</div>
   <div class="dm-size">
     <button class="dm-step" onclick="changeFontSize(-1)" aria-label="Smaller text">A−</button>
     <span class="dm-size-val" id="fontSizeVal">17 px</span>
     <button class="dm-step" onclick="changeFontSize(1)" aria-label="Larger text">A+</button>
   </div>
+  <div class="dm-label dm-label-gap">Font</div>
+  <div class="font-tiles" id="fontGrid" role="group" aria-label="Font"></div>
 </div>
 <div class="display-menu" id="themeMenu" hidden>
   <div class="dm-label">Theme</div>
@@ -758,6 +769,19 @@ let curBookId = null;
 let speechRate = parseFloat(localStorage.getItem('vox_speed') || '1.0');
 let fontSize   = parseInt(localStorage.getItem('vox_fontSize') || '17', 10);
 let currentTheme = localStorage.getItem('vox_theme') || 'dark';
+// Reading font (reader pane only; UI keeps its own fonts)
+const FONTS = [
+  ['lora',      'Lora',      "'Lora', Georgia, serif"],
+  ['literata',  'Literata',  "'Literata', Georgia, serif"],
+  ['georgia',   'Georgia',   "Georgia, serif"],
+  ['times',     'Times',     "'Times New Roman', Times, serif"],
+  ['palatino',  'Palatino',  "Palatino, 'Palatino Linotype', 'Book Antiqua', serif"],
+  ['helvetica', 'Helvetica', "'Helvetica Neue', Helvetica, Arial, sans-serif"],
+  ['system',    'System',    "-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif"],
+  ['avenir',    'Avenir',    "'Avenir Next', Avenir, 'Century Gothic', sans-serif"],
+  ['atkinson',  'Atkinson',  "'Atkinson Hyperlegible', Verdana, sans-serif"],
+];
+let currentFont = localStorage.getItem('vox_font') || 'lora';
 // "sepia" used to be the dark brown theme (now "mocha"); vox_theme_rev marks
 // stored values that already use the new names.
 if (currentTheme === 'sepia' && !localStorage.getItem('vox_theme_rev')) currentTheme = 'mocha';
@@ -1887,7 +1911,28 @@ function setTheme(name) {
   try { localStorage.setItem('vox_theme', name); localStorage.setItem('vox_theme_rev', '2'); } catch (e) {}
 }
 
+function setFont(key) {
+  const f = FONTS.find(x => x[0] === key) || FONTS[0];
+  currentFont = f[0];
+  document.getElementById('readerPane').style.fontFamily = f[2];
+  document.querySelectorAll('.font-tile').forEach(t => t.classList.toggle('active', t.dataset.font === f[0]));
+  try { localStorage.setItem('vox_font', f[0]); } catch (e) {}
+}
+
 // ════ DISPLAY MENU ═══════════════════════
+function renderFontGrid() {
+  const grid = document.getElementById('fontGrid');
+  FONTS.forEach(([key, label, stack]) => {
+    const t = document.createElement('button');
+    t.className = 'font-tile';
+    t.dataset.font = key;
+    t.style.fontFamily = stack;
+    t.textContent = label;
+    t.setAttribute('aria-label', label + ' font');
+    t.addEventListener('click', () => setFont(key));
+    grid.appendChild(t);
+  });
+}
 function renderThemeGrid() {
   const grid = document.getElementById('themeGrid');
   THEMES.forEach(([key, label]) => {
@@ -2006,6 +2051,8 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
 (function () {
   renderThemeGrid();
   setTheme(currentTheme);
+  renderFontGrid();
+  setFont(currentFont);
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
   document.getElementById('fontSizeVal').textContent = fontSize + ' px';
   const ss = document.getElementById('speedSlider');
