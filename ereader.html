@@ -18,6 +18,7 @@
     --accent2: #d4a67a;
     --hl-word: #f0a870;
     --hl-sentence: rgba(200,149,107,0.13);
+    --on-accent: var(--bg);
     --radius: 12px;
     --tr: 0.2s ease;
     --header-h: 52px;
@@ -27,6 +28,7 @@
     --border: #d8cfc4; --text: #2a2420; --text-muted: #8a7f74;
     --accent: #b5743e; --accent2: #c47f42;
     --hl-word: #a0581e; --hl-sentence: rgba(181,116,62,0.1);
+    --on-accent: #fff;
   }
   .theme-sepia {
     --bg: #2a2218; --surface: #322919; --surface2: #3c3121;
@@ -115,7 +117,7 @@
   .theme-btn.slate  { background: #161b22; }
   .theme-btn.forest { background: #112011; }
   .theme-btn.ocean  { background: #0c1b30; }
-  .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(200,149,107,0.4); }
+  .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
   .font-controls { display: flex; gap: 4px; }
   .font-btn {
@@ -124,7 +126,7 @@
     border-radius: 7px; cursor: pointer; font-size: 0.75rem;
     display: flex; align-items: center; justify-content: center;
   }
-  .font-btn:active { background: var(--accent); color: #fff; }
+  .font-btn:active { background: var(--accent); color: var(--on-accent); }
 
   /* ── LIBRARY DRAWER ─────────────────── */
   .drawer-overlay {
@@ -162,7 +164,7 @@
   }
   .head-actions { display: flex; align-items: center; gap: 4px; }
   .head-new {
-    background: var(--accent); color: #fff; border: none;
+    background: var(--accent); color: var(--on-accent); border: none;
     border-radius: 8px; padding: 7px 14px; cursor: pointer;
     font-family: 'Lora', serif; font-size: 0.85rem;
     -webkit-appearance: none;
@@ -202,7 +204,7 @@
   }
   .grp-tab:hover { color: var(--text); }
   .grp-tab .n { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; opacity: 0.7; margin-left: 5px; }
-  .grp-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .grp-tab.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
   .drawer-body {
     flex: 1 1 auto; min-height: 0;
@@ -265,7 +267,7 @@
     color: var(--text); font-family: 'Lora', serif; font-size: 0.8rem;
     white-space: nowrap; -webkit-appearance: none;
   }
-  .chip-edit-btns .save { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip-edit-btns .save { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .chip-edit-btns .del { color: #e05c5c; flex: 0 0 auto; }
 
   .drawer-footer {
@@ -340,7 +342,7 @@
   }
   .load-btn {
     padding: 11px 20px;
-    background: var(--accent); color: #fff; border: none;
+    background: var(--accent); color: var(--on-accent); border: none;
     border-radius: var(--radius); font-family: 'Playfair Display', serif;
     font-size: 1rem; font-weight: 600; cursor: pointer;
     transition: background var(--tr);
@@ -437,11 +439,11 @@
   .pb-btn:active { background: var(--border); }
   .pb-btn.play-btn {
     flex: 2; background: var(--accent);
-    border-color: var(--accent); color: #fff;
+    border-color: var(--accent); color: var(--on-accent);
     font-size: 1.5rem;
   }
   .pb-btn.play-btn:active { background: var(--accent2); }
-  .pb-btn.play-btn.playing { background: #7a4828; border-color: #7a4828; }
+  .pb-btn.play-btn.playing { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
 
   .status-row {
     display: flex; align-items: center; gap: 7px;
@@ -491,22 +493,22 @@
     border-top: 1px solid var(--border);
   }
 
-  .voice-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
-  @media (max-width: 380px) { .voice-grid { grid-template-columns: 1fr 1fr; } }
+  .voice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  @media (max-width: 380px) { .voice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .voice-option {
     display: flex; align-items: center; gap: 8px;
     padding: 10px 9px;
     border-radius: 10px;
     border: 1.5px solid var(--border);
     background: var(--surface2);
-    cursor: pointer;
+    cursor: pointer; min-width: 0;
     transition: border-color var(--tr), background var(--tr);
     -webkit-tap-highlight-color: transparent;
   }
   .voice-option:active { background: var(--surface); }
   .voice-option.selected {
     border-color: var(--accent);
-    background: rgba(200,149,107,0.1);
+    background: var(--hl-sentence);
   }
   .voice-option.unavailable { opacity: 0.45; }
   .voice-avatar {
@@ -523,6 +525,20 @@
     text-transform: uppercase; display: block; margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* ── TOAST (sits above drawer + compose) ── */
+  .toast {
+    position: fixed; z-index: 700; left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    width: max-content; max-width: min(440px, calc(100vw - 32px));
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    padding: 10px 14px; font-size: 0.85rem; line-height: 1.45;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
   .voice-note {
     font-size: 0.72rem; color: var(--text-muted);
     font-style: italic; margin-top: 8px;
@@ -604,7 +620,7 @@
 <!-- READER PANE -->
 <div class="reader-wrap">
   <div id="readerPane">
-    <div class="reader-empty">Tap + New to paste text, or ☰ to open your library.</div>
+    <div class="reader-empty" id="readerEmpty">Tap + New to paste text, or ☰ to open your library.</div>
   </div>
 </div>
 <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -661,6 +677,8 @@
     background:var(--surface2);"></pre>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite" onclick="this.classList.remove('show')"></div>
+
 <script>
 // ════════════════════════════════════════
 // STATE
@@ -714,6 +732,7 @@ let lastWpmVoice = null;
 let lastHighlightWord = null;
 let lastHighlightSentence = null;
 let draftSaveTimer = null;
+const EMPTY_READER = document.getElementById('readerEmpty');
 
 // ════ BACKGROUND KEEP-ALIVE (experimental) ═
 const KEEPALIVE = true;
@@ -910,7 +929,7 @@ function renderVoiceGrid() {
 
 function selectVoice(name) {
   if (!voiceMap[name]) {
-    setStatus(unavailDetail(name), '');
+    toast(unavailDetail(name));
     return;
   }
   selectedVoiceName = name;
@@ -942,9 +961,23 @@ function savePos() {
   if (!curBookId) return;
   try { localStorage.setItem('vox_pos_' + curBookId, curWord); } catch (e) {}
 }
-function makeTitle(text) {
+function titleFromLine(text) {
   const line = text.split('\n').find(l => l.trim()) || 'Untitled';
   return line.replace(/[#*_`>\[\]|]/g, '').trim().slice(0, 42) || 'Untitled';
+}
+// Obsidian notes often start with YAML frontmatter: use its title: field,
+// else the first line after the block (never the "---" fence).
+function makeTitle(text) {
+  const fm = text.match(FRONTMATTER);
+  if (!fm) return titleFromLine(text);
+  const t = fm[0].match(/^title:[ \t]*(.+)$/m);
+  const v = t ? t[1].trim().replace(/^(["'])(.*)\1$/, '$2').trim() : '';
+  return v ? v.slice(0, 42) : titleFromLine(text.slice(fm[0].length));
+}
+// Same rule buildReader uses for a word: a whitespace token with a letter/digit.
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+function countWords(text) {
+  return text.split(/\s+/).filter(t => WORD_CHAR.test(t)).length;
 }
 
 // ════ LIBRARY LIST ═══════════════════════
@@ -1108,7 +1141,7 @@ function editPanel(b) {
     else if (!t) { book.title = makeTitle(book.text); book.customTitle = false; }
     const g = gi.value.trim().slice(0, 60);
     if (g) book.group = g; else delete book.group;
-    if (!saveBooks(books)) { setStatus('Storage full — changes not saved', ''); return; }
+    if (!saveBooks(books)) { toast('Storage full — changes not saved'); return; }
     if (book.id === curBookId) setMediaTitle(book.title);
     editingBookId = null;
     renderLibrary();
@@ -1130,14 +1163,16 @@ function deleteBook(id, ev) {
   ev.stopPropagation();
   const book = getBooks().find(b => b.id === id);
   if (!confirm('Delete "' + (book ? book.title : 'this book') + '" from the library?')) return;
-  saveBooks(getBooks().filter(b => b.id !== id));
-  try { localStorage.removeItem('vox_pos_' + id); } catch (e) {}
   if (curBookId === id) {
+    clearReader();
     curBookId = null;
     try { localStorage.removeItem('vox_last_book'); } catch (e) {}
   }
+  saveBooks(getBooks().filter(b => b.id !== id));
+  try { localStorage.removeItem('vox_pos_' + id); } catch (e) {}
   editingBookId = null;
   renderLibrary();
+  if (book) toast('Deleted "' + book.title + '"');
 }
 
 function setMediaTitle(title) {
@@ -1149,7 +1184,7 @@ function setMediaTitle(title) {
 // ════ BACKUP ═════════════════════════════
 function exportLibrary() {
   const books = getBooks();
-  if (!books.length) { setStatus('Library is empty — nothing to export', ''); return; }
+  if (!books.length) { toast('Library is empty — nothing to export'); return; }
   savePos();
   const positions = {};
   books.forEach(b => { positions[b.id] = getPos(b.id); });
@@ -1162,7 +1197,7 @@ function exportLibrary() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   try { localStorage.setItem('vox_last_export', String(Date.now())); } catch (e) {}
-  setStatus('Exported ' + books.length + ' texts', '');
+  toast('Exported ' + plural(books.length, 'text'));
   renderLibrary();
 }
 
@@ -1177,7 +1212,7 @@ async function importLibrary(input) {
   const incoming = data && Array.isArray(data.books)
     ? data.books.filter(b => b && typeof b.id === 'string' && typeof b.text === 'string' && b.text.trim())
     : null;
-  if (!incoming) { setStatus('Import failed — not a Vox library file', ''); return; }
+  if (!incoming) { toast('Import failed — not a Vox library file'); return; }
   const books = getBooks();
   const ids = new Set(books.map(b => b.id)), texts = new Set(books.map(b => b.text));
   const added = [];
@@ -1186,7 +1221,7 @@ async function importLibrary(input) {
     const nb = {
       id: b.id, text: b.text,
       title: String(b.title || makeTitle(b.text)).slice(0, 120),
-      words: +b.words || b.text.trim().split(/\s+/).length,
+      words: +b.words || countWords(b.text),
       added: +b.added || Date.now(),
     };
     if (b.opened) nb.opened = +b.opened;
@@ -1194,14 +1229,14 @@ async function importLibrary(input) {
     if (b.customTitle) nb.customTitle = true;
     books.push(nb); ids.add(nb.id); texts.add(nb.text); added.push(nb);
   });
-  if (!added.length) { setStatus('Nothing new to import — all ' + incoming.length + ' texts already here', ''); return; }
-  if (!saveBooks(books)) { setStatus('Import failed — storage full', ''); return; }
+  if (!added.length) { toast('Nothing new to import — ' + (incoming.length === 1 ? 'that text is' : 'all ' + incoming.length + ' texts are') + ' already here'); return; }
+  if (!saveBooks(books)) { toast('Import failed — storage full'); return; }
   added.forEach(b => {
     const p = data.positions && +data.positions[b.id];
     if (p > 0) try { localStorage.setItem('vox_pos_' + b.id, String(p)); } catch (e) {}
   });
   const skipped = incoming.length - added.length;
-  setStatus('Imported ' + added.length + ' texts' + (skipped ? ' (' + skipped + ' already here)' : ''), '');
+  toast('Imported ' + plural(added.length, 'text') + (skipped ? ' (' + skipped + ' already here)' : ''));
   renderLibrary();
 }
 
@@ -1243,8 +1278,7 @@ function closeCompose() {
   if (!document.getElementById('drawer').classList.contains('open')) document.body.style.overflow = '';
 }
 function updateComposeCount() {
-  const t = document.getElementById('textInput').value.trim();
-  const n = t ? t.split(/\s+/).length : 0;
+  const n = countWords(document.getElementById('textInput').value);
   document.getElementById('composeCount').textContent =
     n.toLocaleString() + ' words' + (n ? ' · ~' + fmtMins(n / (175 * speechRate)) : '');
 }
@@ -1268,23 +1302,26 @@ function loadText() {
   if (t) { book.title = t; book.customTitle = true; }
   else if (editing || !book.customTitle) { book.title = makeTitle(raw); book.customTitle = false; }
   if (g) book.group = g; else if (editing) delete book.group;
-  book.opened = Date.now();
-
-  const prevId = curBookId;
+  book.words = countWords(raw);
+  // Editing a different book from the library saves it without interrupting
+  // what's open; new texts and edits to the open book (re)open it.
+  const openIt = !editing || book.id === curBookId;
+  if (openIt) book.opened = Date.now();
+  if (!saveBooks(books)) { toast('Storage full — export a backup, then delete old texts'); return; }
+  if (!editing) { try { localStorage.removeItem('vox_text'); } catch (e) {} }
+  closeCompose();
+  if (!openIt) {
+    renderLibrary();
+    toast('Saved changes to "' + book.title + '"');
+    return;
+  }
+  if (book.id === curBookId) savePos();
   stopReading();
   curBookId = book.id;
   buildReader(raw);
-  book.words = words.length;
-  if (!saveBooks(books)) {
-    setStatus('Storage full — export a backup, then delete old texts', '');
-    curBookId = prevId;
-    return;
-  }
-  if (!editing) { try { localStorage.removeItem('vox_text'); } catch (e) {} }
-  closeCompose();
   const pos = getPos(book.id);
   finishOpen(book, pos < words.length ? pos : 0);
-  if (editing) setStatus('Saved changes to "' + book.title + '"', '');
+  if (editing) toast('Saved changes to "' + book.title + '"');
 }
 
 function openBook(id) {
@@ -1315,6 +1352,19 @@ function finishOpen(book, startWord) {
   setStatus(curWord > 0 ? 'Resumed "' + book.title + '" at ' + pct + '%' : 'Loaded "' + book.title + '"', '');
 }
 
+function clearReader() {
+  stopReading();
+  words = []; sentences = []; curWord = 0;
+  const pane = document.getElementById('readerPane');
+  pane.innerHTML = '';
+  pane.appendChild(EMPTY_READER);
+  document.getElementById('posSlider').value = 0;
+  document.getElementById('posVal').textContent = '0%';
+  applyPositionGradient(0);
+  updateProgress(0); updateMeta();
+  if (KEEPALIVE && 'mediaSession' in navigator) navigator.mediaSession.metadata = null;
+}
+
 // ════════════════════════════════════════
 // TEXT → READER DOM (verbatim — the pane
 // shows EXACTLY the pasted text; nothing
@@ -1337,10 +1387,28 @@ function splitSentences(text) {
 const DECOR = '[*_`#>|~\\[\\]()]';
 const STRIP_DECOR = new RegExp(`(?<![\\p{L}\\p{N}])${DECOR}+|${DECOR}+(?![\\p{L}\\p{N}])`, 'gu');
 function spokenForm(tok) {
-  const linkMatch = tok.match(/^\[([^\]]+)\]\([^)]*\)$/);
-  if (linkMatch) return linkMatch[1].replace(/(\d):(\d)/g, '$1 $2').trim();
-  let s = tok.replace(STRIP_DECOR, '');
-  return s.replace(/(\d):(\d)/g, '$1 $2').trim();
+  return tok.replace(STRIP_DECOR, '').replace(/(\d):(\d)/g, '$1 $2').trim();
+}
+// Character ranges that are never spoken (whole-text, so a span may cover
+// several words). Words left with nothing to say are skipped in playback.
+const FRONTMATTER = /^\uFEFF?---[ \t]*\r?\n(?:[A-Za-z_][\w -]*:[^\n]*\r?\n(?:[\s\S]*?\r?\n)?)?(?:---|\.\.\.)[ \t]*(?=\r?\n|$)/;
+const SILENT_PATTERNS = [
+  /%%[\s\S]*?%%/g,                          // Obsidian comment
+  /!\[\[[^\]\n]*\]\]/g,                     // embed ![[file]]
+  /\[\[[^\]|\n]*\|/g,                        // wikilink target before alias: [[Target|
+  /\]\((?:[^()\s]|\([^()\s]*\))*\)/g,        // link/image target: ](url)
+  /<?\bhttps?:\/\/[^\s<>]+>?/g,             // bare URL
+  /\[\^[^\]\s]+\]/g,                        // footnote ref [^1]
+  /==(?=[^=\s])|(?<=[^=\s])==/g,            // ==highlight== marks
+];
+function silentMask(text) {
+  const m = new Uint8Array(text.length);
+  const fm = text.match(FRONTMATTER);
+  if (fm) m.fill(1, 0, fm[0].length);
+  SILENT_PATTERNS.forEach(re => {
+    for (const x of text.matchAll(re)) m.fill(1, x.index, x.index + x[0].length);
+  });
+  return m;
 }
 
 function buildReader(text) {
@@ -1350,11 +1418,19 @@ function buildReader(text) {
   words = []; sentences = [];
   curWord = 0;
 
-  const hasWordChar = /[\p{L}\p{N}]/u;
   const units = [];
-  const paras = text.split(/\n\s*\n/).filter(p => p.trim());
+  const silent = silentMask(text);
+  // Paragraphs with their start offset in `text` (pieces/tokens below
+  // concatenate back to the paragraph exactly, so offsets stay aligned).
+  const paras = [];
+  let pStart = 0;
+  for (const m of text.matchAll(/\n\s*\n/g)) {
+    paras.push([text.slice(pStart, m.index), pStart]);
+    pStart = m.index + m[0].length;
+  }
+  paras.push([text.slice(pStart), pStart]);
 
-  paras.forEach(para => {
+  paras.filter(([para]) => para.trim()).forEach(([para, off]) => {
     const paraDiv = document.createElement('div');
     paraDiv.className = 'para';
 
@@ -1365,6 +1441,8 @@ function buildReader(text) {
       units.push(unit);
 
       piece.split(/(\s+)/).forEach(tok => {
+        const tokOff = off;
+        off += tok.length;
         if (!tok) return;
         if (/^\s+$/.test(tok)) {
           unit.el.appendChild(document.createTextNode(tok));
@@ -1377,13 +1455,15 @@ function buildReader(text) {
           paraDiv.appendChild(unit.el);
           units.push(unit);
         }
-        if (hasWordChar.test(tok)) {
+        if (WORD_CHAR.test(tok)) {
           const w = document.createElement('span');
           w.className = 'word';
           w.textContent = tok;
+          let audible = '';
+          for (let i = 0; i < tok.length; i++) if (!silent[tokOff + i]) audible += tok[i];
           const obj = {
             el: w,
-            spoken: spokenForm(tok),
+            spoken: spokenForm(audible),
             sentIdx: 0,
             globalIdx: words.length,
             sentenceEl: null,
@@ -1729,6 +1809,18 @@ function setTheme(name, el) {
   try { localStorage.setItem('vox_theme', name); } catch (e) {}
 }
 
+// Messages from the library/compose land here: the status row sits under
+// the drawer, so anything said while it's open would go unseen.
+let toastTimer = null;
+function toast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), Math.max(2500, text.length * 60));
+}
+function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
 function setStatus(text, state) {
   document.getElementById('statusText').textContent = text;
   document.getElementById('statusDot').className = 'status-dot' + (state ? ' ' + state : '');
@@ -1753,15 +1845,20 @@ document.addEventListener('keydown', (e) => {
     else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); loadText(); }
     return;
   }
-  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+  const t = e.target;
+  if (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')) {
     if (e.key === 'Escape') closeDrawer();
     return;
   }
+  // (A focused Speed/Position slider falls through: arrows/Space stay
+  // playback shortcuts instead of nudging the slider.)
   if (e.key === 'Escape') { closeDrawer(); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === 'l' || e.key === 'L') { toggleDrawer(); return; }
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
-  else if (e.key === 'ArrowLeft')  { skipSentence(-1); }
-  else if (e.key === 'ArrowRight') { skipSentence(1); }
+  else if (e.key === 'ArrowLeft')  { e.preventDefault(); skipSentence(-1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); skipSentence(1); }
+  else if (t.type === 'range' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); }
   else if (e.key === 'r' || e.key === 'R') { restartBook(); }
 });
 
@@ -1815,6 +1912,17 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
   ps.addEventListener('pointercancel', end);
   ps.addEventListener('touchstart', begin, { passive: true });
   ps.addEventListener('touchend', end);
+
+  // Auto-titled notes saved before frontmatter support were titled "---";
+  // re-derive only titles that still match the old first-line rule.
+  const books = getBooks();
+  let retitled = false;
+  books.forEach(b => {
+    if (b.customTitle || b.title !== titleFromLine(b.text)) return;
+    const t = makeTitle(b.text);
+    if (t !== b.title) { b.title = t; retitled = true; }
+  });
+  if (retitled) saveBooks(books);
 
   renderLibrary();
 
