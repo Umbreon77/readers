@@ -992,19 +992,28 @@ function cancelPendingRestart() {
 // daemon hiccup): no onend, no error — the UI sits on "Playing…" in silence.
 // Track progress events; if none arrive in time, re-speak from curWord.
 const STALL_MS = 6000;
+// Chrome on Mac can wedge its whole speech engine (speaking=true, nothing
+// ever starts; only a browser restart clears it). If nothing has started
+// since play was pressed, give up after fewer, faster retries and say so.
+const START_STALL_MS = 4000;
+const MAX_START_RETRIES = 2;
+let startedSincePlay = false;
 const MAX_STALL_RETRIES = 3;
 let lastSpeechProgress = 0;
 let stallRetries = 0;
 setInterval(() => {
   if (!playing || !wantPlaying || !activeUtterance || pendingRestartTimer) return;
   if (performance.now() - lastSpeechProgress < activeUtterance._stallLimit) return;
-  if (++stallRetries > MAX_STALL_RETRIES) {
+  if (++stallRetries > (startedSincePlay ? MAX_STALL_RETRIES : MAX_START_RETRIES)) {
     pauseReading();
-    setStatus(IS_WEBKIT ? 'Speech engine stuck — close and reopen the tab, then tap play'
-                         : 'Speech engine stuck — quit the browser (⌘Q) and reopen, then tap play', 'paused');
+    const fix = IS_WEBKIT ? 'Close and reopen this tab, then press play.'
+      : /Chrome/.test(navigator.userAgent) ? 'This is a Chrome bug: quit Chrome (⌘Q), reopen it, then press play. Safari also works meanwhile.'
+      : 'Quit the browser (⌘Q), reopen it, then press play.';
+    setStatus('Speech engine stuck', 'paused');
+    toast('The speech engine is stuck and isn\'t starting. ' + fix);
     return;
   }
-  setStatus('Reconnecting speech…', 'playing');
+  setStatus(startedSincePlay ? 'Reconnecting speech…' : 'Still starting…', 'playing');
   restartAt(curWord, VOICE_SWITCH_DELAY);
 }, 1000);
 
@@ -1877,6 +1886,7 @@ function togglePlay() {
   if (wantPlaying) { pauseReading(); return; }
   wantPlaying = true;
   stallRetries = 0;
+  startedSincePlay = false;
   if (followPaused) resumeFollow();
   startKeepAlive();
   const start = curWord >= words.length ? 0 : curWord;
@@ -1890,7 +1900,7 @@ function speakFrom(g) {
   if (synth.speaking || synth.pending) { activeUtterance = null; synth.cancel(); }
   playing = true;
   setPlayBtn(true);
-  setStatus('Playing…', 'playing');
+  setStatus(startedSincePlay ? 'Playing…' : 'Starting…', 'playing');
   setCurrentWord(g);
   speakUnit(g);
 }
@@ -1912,7 +1922,7 @@ function speakUnit(g) {
   // Before audio starts / between word events: STALL_MS. Voices that emit no
   // boundary events get the whole estimated utterance length plus slack.
   const estMs = chunk.length * 60000 / (150 * speechRate);
-  u._stallLimit = STALL_MS;
+  u._stallLimit = startedSincePlay ? STALL_MS : START_STALL_MS;
   u.onboundary = (e) => {
     lastSpeechProgress = performance.now();
     u._stallLimit = STALL_MS;
@@ -1930,7 +1940,8 @@ function speakUnit(g) {
   u.onstart = () => {
     speakT0 = lastSpeechProgress = performance.now();
     u._stallLimit = Math.max(STALL_MS, estMs * 2 + 3000);
-    if (stallRetries) setStatus('Playing…', 'playing');
+    if (!startedSincePlay || stallRetries) setStatus('Playing…', 'playing');
+    startedSincePlay = true;
   };
 
   u.onend = () => {
