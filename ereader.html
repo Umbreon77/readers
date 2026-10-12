@@ -408,6 +408,7 @@
   .compose-row { display: flex; gap: 8px; }
   .compose-row #titleInput { flex: 2; }
   .compose-row #groupInput { flex: 1; }
+  .file-btn { flex-shrink: 0; padding: 8px 14px; border-radius: 9px; white-space: nowrap; }
   #textInput {
     flex: 1; min-height: 120px; width: 100%;
     background: var(--surface2);
@@ -549,6 +550,40 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.72rem; color: var(--text-muted);
   }
+  #statusText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status-tools { position: relative; display: flex; gap: 6px; flex-shrink: 0; }
+  .tool-btn, .speed-val {
+    cursor: pointer; white-space: nowrap;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 7px; padding: 4px 9px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+    -webkit-appearance: none;
+  }
+  .tool-btn.on, .tool-btn[aria-expanded="true"], .speed-val[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  .speed-val { padding: 1px 7px; font-weight: 700; }
+  /* Popovers anchored above their button (the controls sit low on screen) */
+  .ctrl-menu {
+    position: absolute; z-index: 360; right: 0; bottom: calc(100% + 8px);
+    min-width: 170px; max-width: min(320px, calc(100vw - 32px));
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,0.35);
+    padding: 6px; font-family: 'Lora', serif;
+  }
+  .ctrl-menu[hidden] { display: none; }
+  .chapters-menu { width: min(320px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; }
+  .speed-menu { left: 0; right: auto; bottom: calc(100% + 4px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; min-width: 210px; }
+  .speed-menu[hidden] { display: none; }
+  .slider-block { position: relative; }
+  .menu-item {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: none; border: none; color: var(--text);
+    border-radius: 7px; padding: 9px 10px; font-family: 'Lora', serif; font-size: 0.88rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    -webkit-appearance: none;
+  }
+  .menu-item:hover { background: var(--surface2); }
+  .menu-item.active { color: var(--accent); background: var(--hl-sentence); }
+  .speed-menu .menu-item { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; border: 1px solid var(--border); }
   .status-dot {
     width: 6px; height: 6px; border-radius: 50%;
     background: var(--text-muted); flex-shrink: 0;
@@ -737,6 +772,8 @@
     <div class="compose-row">
       <input id="titleInput" class="meta-input" placeholder="Title (optional — uses first line)" autocomplete="off">
       <input id="groupInput" class="meta-input" list="groupList" placeholder="Group (optional)" autocomplete="off">
+      <button class="ghost-btn file-btn" onclick="document.getElementById('mdFile').click()" title="Open a .md or .txt file (e.g. an Obsidian note)">📄 Open file…</button>
+      <input type="file" id="mdFile" accept=".md,.markdown,.txt,text/plain,text/markdown" hidden onchange="loadFileIntoCompose(this.files[0]); this.value = ''">
     </div>
     <textarea id="textInput" placeholder="Paste your text here…" spellcheck="false"></textarea>
   </div>
@@ -777,15 +814,22 @@
   <div class="status-row">
     <div class="status-dot" id="statusDot"></div>
     <span id="statusText">Ready</span>
+    <div class="status-tools">
+      <button class="tool-btn" id="chaptersBtn" onclick="renderChapters(); toggleMenu('chaptersMenu')" aria-expanded="false" hidden>Chapters</button>
+      <button class="tool-btn" id="sleepBtn" onclick="renderSleepMenu(); toggleMenu('sleepMenu')" aria-expanded="false">☾ Sleep</button>
+      <div class="ctrl-menu chapters-menu" id="chaptersMenu" hidden></div>
+      <div class="ctrl-menu" id="sleepMenu" hidden></div>
+    </div>
   </div>
 
   <div class="sliders-row">
     <div class="slider-block">
       <div class="slider-lbl">
-        <span>Speed</span><strong id="speedVal">1.0×</strong>
+        <span>Speed</span><button class="speed-val" id="speedVal" onclick="renderSpeedMenu(); toggleMenu('speedMenu')" aria-label="Speed presets" aria-expanded="false">1.0×</button>
       </div>
-      <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1"
+      <input type="range" id="speedSlider" min="0.5" max="3" step="0.05" value="1"
              oninput="updateSpeedDisplay(this.value)" onchange="updateSpeedCommit(this.value)">
+      <div class="ctrl-menu speed-menu" id="speedMenu" hidden></div>
     </div>
     <div class="slider-block">
       <div class="slider-lbl">
@@ -1003,7 +1047,7 @@ function newEntry() { openCompose('new'); }
 const PREFERRED = [
   { name: 'Nicky',    gender: '♀', color: '#e87cb0', bg: '#4a1e35' },
   { name: 'Samantha', gender: '♀', color: '#4f9de8', bg: '#1a3050' },
-  { name: 'Aaron',    gender: '♂', color: '#6dbf7c', bg: '#1a3828' },
+  { name: 'Daniel',   gender: '♂', color: '#e0a05c', bg: '#3d2a14' },  // British; Aaron was removed from macOS
 ];
 let voiceMap = {};   // name -> best matching SpeechSynthesisVoice
 let selectedVoiceName = localStorage.getItem('vox_voice_name') || '';
@@ -1049,13 +1093,12 @@ function initVoices() {
 }
 
 function unavailReason(name) {
-  if (IS_IOS) return 'iPhone hides it from web apps';
-  if (name === 'Aaron') return 'macOS no longer offers it';
+  if (IS_IOS) return name === 'Nicky' ? 'iPhone hides it from web apps' : 'Not on this iPhone';
   return 'Not installed on this Mac';
 }
 function unavailDetail(name) {
-  if (IS_IOS) return name + ' works in iOS Speak Selection, but Apple blocks it for ALL web apps. Use Samantha here, or Speak Selection in Obsidian for ' + name + '.';
-  if (name === 'Aaron') return 'Aaron was removed from macOS — System Settings has nothing to download. It returns automatically if Apple ever ships it again.';
+  if (IS_IOS && name === 'Nicky') return 'Nicky works in iOS Speak Selection, but Apple blocks it for ALL web apps. Use Samantha or Daniel here, or Speak Selection in Obsidian for Nicky.';
+  if (IS_IOS) return name + ' isn\'t available to web apps on this iPhone.';
   return name + ': download it in System Settings → Accessibility → Spoken Content → Manage Voices, then fully restart the browser.';
 }
 
@@ -1074,7 +1117,7 @@ function renderVoiceGrid() {
       <div class="voice-avatar" style="background:${p.bg};color:${p.color}">${p.gender}</div>
       <div class="voice-info">
         <div class="voice-name">${p.name}</div>
-        <span class="voice-tag">${available ? 'Ready' : unavailReason(p.name)}</span>
+        <span class="voice-tag">${available ? (/^en-GB/i.test(voiceMap[p.name].lang) ? 'Ready · UK' : 'Ready') : unavailReason(p.name)}</span>
       </div>`;
     div.addEventListener('click', () => selectVoice(p.name));
     grid.appendChild(div);
@@ -1118,10 +1161,16 @@ function saveBooks(books) {
 function getPos(id) {
   return parseInt(localStorage.getItem('vox_pos_' + id) || '0', 10);
 }
+// vox_post_<id> = when that position last CHANGED (sync: newer position wins).
 function savePos() {
   if (!curBookId) return;
-  try { localStorage.setItem('vox_pos_' + curBookId, curWord); } catch (e) {}
+  try {
+    if (localStorage.getItem('vox_pos_' + curBookId) === String(curWord)) return;
+    localStorage.setItem('vox_pos_' + curBookId, curWord);
+    localStorage.setItem('vox_post_' + curBookId, String(Date.now()));
+  } catch (e) {}
 }
+function getPosTime(id) { return parseInt(localStorage.getItem('vox_post_' + id) || '0', 10); }
 function titleFromLine(text) {
   const line = text.split('\n').find(l => l.trim()) || 'Untitled';
   return line.replace(/[#*_`>\[\]|]/g, '').trim().slice(0, 42) || 'Untitled';
@@ -1246,7 +1295,8 @@ function renderLibStats(books) {
   if (pct >= 70) line1.className = 'warn';
   const line2 = document.createElement('div');
   line2.textContent = last ? 'Backed up ' + fmtAgo(last) : 'Not backed up yet';
-  if (books.length && (!last || Date.now() - last > 14 * 86400000)) line2.className = 'warn';
+  // iPhone Safari may clear site data after ~7 days unvisited, so nag sooner there
+  if (books.length && (!last || Date.now() - last > (IS_IOS ? 7 : 14) * 86400000)) line2.className = 'warn';
   el.append(line1, line2);
 }
 
@@ -1302,6 +1352,7 @@ function editPanel(b) {
     else if (!t) { book.title = makeTitle(book.text); book.customTitle = false; }
     const g = gi.value.trim().slice(0, 60);
     if (g) book.group = g; else delete book.group;
+    book.updated = Date.now();
     if (!saveBooks(books)) { toast('Storage full — changes not saved'); return; }
     if (book.id === curBookId) setMediaTitle(book.title);
     editingBookId = null;
@@ -1330,7 +1381,7 @@ function deleteBook(id, ev) {
     try { localStorage.removeItem('vox_last_book'); } catch (e) {}
   }
   saveBooks(getBooks().filter(b => b.id !== id));
-  try { localStorage.removeItem('vox_pos_' + id); } catch (e) {}
+  try { localStorage.removeItem('vox_pos_' + id); localStorage.removeItem('vox_post_' + id); } catch (e) {}
   editingBookId = null;
   renderLibrary();
   if (book) toast('Deleted "' + book.title + '"');
@@ -1354,9 +1405,9 @@ function exportLibrary() {
   const books = getBooks();
   if (!books.length) { toast('Library is empty — nothing to export'); return; }
   savePos();
-  const positions = {};
-  books.forEach(b => { positions[b.id] = getPos(b.id); });
-  const data = { app: 'vox-reader', version: 1, exported: new Date().toISOString(), books, positions };
+  const positions = {}, posTimes = {};
+  books.forEach(b => { positions[b.id] = getPos(b.id); posTimes[b.id] = getPosTime(b.id); });
+  const data = { app: 'vox-reader', version: 2, exported: new Date().toISOString(), books, positions, posTimes };
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
   a.download = 'vox-library-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -1369,8 +1420,11 @@ function exportLibrary() {
   renderLibrary();
 }
 
-// Merge a backup into the library: adds texts it doesn't already have
-// (same id or identical text = skipped), never overwrites or deletes.
+// Sync from a backup (e.g. exported on the other device). Never deletes.
+// - Text not here yet (by id or identical text) → added.
+// - Text here on both → newer edit (book.updated) wins text/title/group;
+//   newer reading position (vox_post_) wins, or the further one when the
+//   file predates position timestamps.
 async function importLibrary(input) {
   const file = input.files && input.files[0];
   input.value = '';
@@ -1381,31 +1435,60 @@ async function importLibrary(input) {
     ? data.books.filter(b => b && typeof b.id === 'string' && typeof b.text === 'string' && b.text.trim())
     : null;
   if (!incoming) { toast('Import failed — not a Vox library file'); return; }
+  savePos();
   const books = getBooks();
-  const ids = new Set(books.map(b => b.id)), texts = new Set(books.map(b => b.text));
-  const added = [];
+  const byId = new Map(books.map(b => [b.id, b])), byText = new Map(books.map(b => [b.text, b]));
+  const positions = data.positions || {}, posTimes = data.posTimes || {};
+  const newPos = [];  // [id, pos, time] to write once the books are saved
+  let added = 0, updated = 0, curChanged = false;
   incoming.forEach(b => {
-    if (ids.has(b.id) || texts.has(b.text)) return;
-    const nb = {
-      id: b.id, text: b.text,
-      title: String(b.title || makeTitle(b.text)).slice(0, 120),
-      words: +b.words || countWords(b.text),
-      added: +b.added || Date.now(),
-    };
-    if (b.opened) nb.opened = +b.opened;
-    if (b.group) nb.group = String(b.group).slice(0, 60);
-    if (b.customTitle) nb.customTitle = true;
-    books.push(nb); ids.add(nb.id); texts.add(nb.text); added.push(nb);
+    const inPos = Math.max(0, +positions[b.id] || 0), inPosT = +posTimes[b.id] || 0;
+    const local = byId.get(b.id) || byText.get(b.text);
+    if (!local) {
+      const nb = {
+        id: b.id, text: b.text,
+        title: String(b.title || makeTitle(b.text)).slice(0, 120),
+        words: +b.words || countWords(b.text),
+        added: +b.added || Date.now(),
+      };
+      if (b.opened) nb.opened = +b.opened;
+      if (b.updated) nb.updated = +b.updated;
+      if (b.group) nb.group = String(b.group).slice(0, 60);
+      if (b.customTitle) nb.customTitle = true;
+      books.push(nb); byId.set(nb.id, nb); byText.set(nb.text, nb);
+      if (inPos > 0) newPos.push([nb.id, inPos, inPosT]);
+      added++;
+      return;
+    }
+    let changed = false;
+    if ((+b.updated || 0) > (+local.updated || 0)) {
+      local.text = b.text;
+      local.words = countWords(b.text);
+      local.title = String(b.title || makeTitle(b.text)).slice(0, 120);
+      if (b.customTitle) local.customTitle = true; else delete local.customTitle;
+      if (b.group) local.group = String(b.group).slice(0, 60); else delete local.group;
+      local.updated = +b.updated;
+      changed = true;
+    }
+    const locPos = getPos(local.id), locPosT = getPosTime(local.id);
+    const takePos = (inPosT || locPosT) ? inPosT > locPosT : inPos > locPos;
+    if (takePos && inPos !== locPos) { newPos.push([local.id, inPos, inPosT || Date.now()]); changed = true; }
+    if (+b.opened > (local.opened || 0)) local.opened = +b.opened;
+    if (changed) { updated++; if (local.id === curBookId) curChanged = true; }
   });
-  if (!added.length) { toast('Nothing new to import — ' + (incoming.length === 1 ? 'that text is' : 'all ' + incoming.length + ' texts are') + ' already here'); return; }
+  if (!added && !updated) { toast('Already up to date — nothing new in that file'); return; }
   if (!saveBooks(books)) { toast('Import failed — storage full'); return; }
-  added.forEach(b => {
-    const p = data.positions && +data.positions[b.id];
-    if (p > 0) try { localStorage.setItem('vox_pos_' + b.id, String(p)); } catch (e) {}
+  newPos.forEach(([id, p, t]) => {
+    try { localStorage.setItem('vox_pos_' + id, String(p)); localStorage.setItem('vox_post_' + id, String(t)); } catch (e) {}
   });
-  const skipped = incoming.length - added.length;
-  toast('Imported ' + plural(added.length, 'text') + (skipped ? ' (' + skipped + ' already here)' : ''));
-  renderLibrary();
+  const parts = [];
+  if (added) parts.push('added ' + plural(added, 'text'));
+  if (updated) parts.push('updated ' + updated);
+  const msg = parts.join(' · ');
+  // Show the synced text/position for the open book, unless it's playing
+  if (curChanged && !wantPlaying) openBook(curBookId);
+  else renderLibrary();
+  toast(msg.charAt(0).toUpperCase() + msg.slice(1) + (curChanged && wantPlaying ? ' (open text applies after you pause and reopen it)' : ''));
 }
 
 // ════ COMPOSE (new / edit text) ══════════
@@ -1439,6 +1522,31 @@ function openCompose(mode) {
   document.body.style.overflow = 'hidden';
   setTimeout(() => { ta.focus(); if (mode !== 'new') ta.setSelectionRange(0, 0); ta.scrollTop = 0; }, 60);
 }
+// Fill compose from a file; the filename becomes the title (Obsidian notes
+// are named by title) unless one is already typed.
+function loadFileIntoCompose(file) {
+  if (!file) return;
+  if (!/\.(md|markdown|txt)$/i.test(file.name) && !/^text\//.test(file.type)) { toast('Only .md or .txt files can be opened'); return; }
+  if (file.size > 4e6) { toast('That file is too big (over 4 MB)'); return; }
+  file.text().then(t => {
+    if (!composeMode) openCompose('new');
+    const ta = document.getElementById('textInput'), ti = document.getElementById('titleInput');
+    ta.value = t.replace(/^\uFEFF/, '');
+    if (!ti.value.trim()) ti.value = file.name.replace(/\.(md|markdown|txt)$/i, '').trim().slice(0, 120);
+    ta.dispatchEvent(new Event('input'));  // word count + draft
+    ta.scrollTop = 0;
+  }).catch(() => toast('Couldn\'t read that file'));
+}
+document.addEventListener('dragover', (e) => {
+  if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();
+});
+document.addEventListener('drop', (e) => {
+  const f = e.dataTransfer && e.dataTransfer.files[0];
+  if (!f) return;
+  e.preventDefault();
+  loadFileIntoCompose(f);
+});
+
 function closeCompose() {
   composeMode = null;
   document.getElementById('compose').classList.remove('open');
@@ -1471,6 +1579,7 @@ function loadText() {
   else if (editing || !book.customTitle) { book.title = makeTitle(raw); book.customTitle = false; }
   if (g) book.group = g; else if (editing) delete book.group;
   book.words = countWords(raw);
+  book.updated = Date.now();
   // Editing a different book from the library saves it without interrupting
   // what's open; new texts and edits to the open book (re)open it.
   const openIt = !editing || book.id === curBookId;
@@ -1505,7 +1614,11 @@ function openBook(id) {
   finishOpen(book, (pos >= 0 && pos < words.length) ? pos : 0);
 }
 
+// First word that is actually spoken (skips frontmatter etc.)
+function firstSpoken() { const i = words.findIndex(w => w.spoken); return i < 0 ? 0 : i; }
+
 function finishOpen(book, startWord) {
+  if (!startWord) startWord = firstSpoken();
   try { localStorage.setItem('vox_last_book', book.id); } catch (e) {}
   setMediaTitle(book.title);
   curWord = startWord;
@@ -1532,6 +1645,7 @@ function clearReader() {
   updateProgress(0); updateMeta();
   setMediaTitle(null);
   followPaused = false; updateFollowPill();
+  chapters = []; document.getElementById('chaptersBtn').hidden = true;
 }
 
 // ════════════════════════════════════════
@@ -1636,6 +1750,7 @@ function buildReader(text) {
             sentIdx: 0,
             globalIdx: words.length,
             sentenceEl: null,
+            off: tokOff,
           };
           w.addEventListener('click', () => seekToWord(obj.globalIdx));
           unit.words.push(obj);
@@ -1652,12 +1767,103 @@ function buildReader(text) {
 
   sentences = units.filter(u => u.words.length);
   sentences.forEach((s, i) => s.words.forEach(w => { w.sentIdx = i; w.sentenceEl = s.el; }));
+  buildChapters(text);
 
   pane.scrollTop = 0;
   if (!words.length) {
     pane.innerHTML = '<div class="reader-empty">No readable words found in that text.</div>';
   }
 }
+
+// ════ CHAPTERS ═══════════════════════════
+// Markdown headings (outside frontmatter / code fences) → jump list.
+// Fallback when there are none: standalone "Chapter 3" / "Part II" lines.
+let chapters = [];  // { title, level, word }
+function buildChapters(text) {
+  chapters = [];
+  const skip = new Uint8Array(text.length);
+  const fm = text.match(FRONTMATTER);
+  if (fm) skip.fill(1, 0, fm[0].length);
+  for (const m of text.matchAll(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*$/gm)) skip.fill(1, m.index, m.index + m[0].length);
+  let found = [];
+  for (const m of text.matchAll(/^(#{1,6})[ \t]+(.+?)[ \t#]*$/gm)) {
+    if (!skip[m.index]) found.push({ off: m.index, level: m[1].length, title: m[2] });
+  }
+  if (!found.length) {
+    for (const m of text.matchAll(/^[ \t]*((?:chapter|part|book|prologue|epilogue|introduction|preface)\b[^\n]{0,60})$/gim)) {
+      if (!skip[m.index]) found.push({ off: m.index, level: 1, title: m[1] });
+    }
+  }
+  let wi = 0;
+  found.forEach(h => {
+    while (wi < words.length && words[wi].off < h.off) wi++;
+    if (wi >= words.length || (chapters.length && chapters[chapters.length - 1].word === wi)) return;
+    const title = h.title.replace(/[*_`\[\]=]/g, '').trim();
+    if (title) chapters.push({ title: title.slice(0, 90), level: h.level, word: wi });
+  });
+  document.getElementById('chaptersBtn').hidden = chapters.length < 2;
+}
+function chapterAt(g) {
+  let c = -1;
+  for (let i = 0; i < chapters.length && chapters[i].word <= g; i++) c = i;
+  return c;
+}
+function renderChapters() {
+  const m = document.getElementById('chaptersMenu');
+  m.innerHTML = '';
+  const cur = chapterAt(curWord);
+  const minLevel = Math.min(...chapters.map(c => c.level));
+  chapters.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'menu-item' + (i === cur ? ' active' : '');
+    b.style.paddingLeft = (10 + (c.level - minLevel) * 14) + 'px';
+    b.textContent = c.title;
+    b.title = c.title;
+    b.addEventListener('click', () => { closeMenus(); seekToWord(c.word); scrollToCurrent(); });
+    m.appendChild(b);
+  });
+  setTimeout(() => { const a = m.querySelector('.active'); if (a) a.scrollIntoView({ block: 'center' }); }, 0);
+}
+
+// ════ SLEEP TIMER ════════════════════════
+// Counts down only while playing; "end of chapter" pauses at the next heading.
+let sleepLeft = null;  // ms remaining | 'chapter' | null (off)
+function setSleep(v) {
+  sleepLeft = v;
+  closeMenus();
+  updateSleepBtn();
+  if (v !== null) toast(v === 'chapter' ? 'Sleep timer: stops at the end of this chapter' : 'Sleep timer: ' + Math.round(v / 60000) + ' min');
+}
+function updateSleepBtn() {
+  const b = document.getElementById('sleepBtn');
+  b.textContent = sleepLeft === null ? '☾ Sleep' : sleepLeft === 'chapter' ? '☾ Chapter' : '☾ ' + Math.ceil(sleepLeft / 60000) + 'm';
+  b.classList.toggle('on', sleepLeft !== null);
+}
+function renderSleepMenu() {
+  const m = document.getElementById('sleepMenu');
+  m.innerHTML = '';
+  const opts = [['Off', null], ['15 min', 15], ['30 min', 30], ['45 min', 45], ['60 min', 60]];
+  if (chapters.length >= 2) opts.push(['End of chapter', 'chapter']);
+  opts.forEach(([label, v]) => {
+    const b = document.createElement('button');
+    const isOn = v === null ? sleepLeft === null : v === 'chapter' ? sleepLeft === 'chapter' : false;
+    b.className = 'menu-item' + (isOn ? ' active' : '');
+    b.textContent = label;
+    b.addEventListener('click', () => setSleep(v === null || v === 'chapter' ? v : v * 60000));
+    m.appendChild(b);
+  });
+}
+function sleepFire() {
+  sleepLeft = null;
+  updateSleepBtn();
+  pauseReading();
+  setStatus('Sleep timer — paused', 'paused');
+}
+setInterval(() => {
+  if (typeof sleepLeft !== 'number' || !wantPlaying) return;
+  sleepLeft -= 1000;
+  if (sleepLeft <= 0) sleepFire(); else updateSleepBtn();
+}, 1000);
 
 // ════════════════════════════════════════
 // PLAYBACK — sentence queue. Each sentence
@@ -1780,10 +1986,12 @@ function advanceFrom(sIdx) {
   if (!next) { finishedReading(); return; }
   const g = next.words[0].globalIdx;
   setCurrentWord(g);
+  if (sleepLeft === 'chapter' && chapters.some(c => c.word === g)) { sleepFire(); return; }
   speakUnit(g);
 }
 
 function finishedReading() {
+  if (sleepLeft !== null) { sleepLeft = null; updateSleepBtn(); }
   wantPlaying = false;
   playing = false;
   activeUtterance = null;
@@ -1823,7 +2031,7 @@ function stopReading(resetHL = true) {
 
 function restartBook() {
   if (!words.length) return;
-  seekToWord(0);
+  seekToWord(firstSpoken());
   document.getElementById('readerPane').scrollTop = 0;
 }
 
@@ -1995,9 +2203,26 @@ function applySpeedGradient(val) {
   document.getElementById('speedSlider').style.background =
     `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--border) ${pct}%, var(--border) 100%)`;
 }
+function fmtRate(r) { return (Math.round(r * 100) % 10 ? r.toFixed(2) : r.toFixed(1)) + '×'; }
+const SPEED_PRESETS = [0.8, 1, 1.25, 1.5, 1.75, 2];
+function renderSpeedMenu() {
+  const m = document.getElementById('speedMenu');
+  m.innerHTML = '';
+  SPEED_PRESETS.forEach(r => {
+    const b = document.createElement('button');
+    b.className = 'menu-item' + (Math.abs(r - speechRate) < 0.001 ? ' active' : '');
+    b.textContent = fmtRate(r);
+    b.addEventListener('click', () => {
+      document.getElementById('speedSlider').value = r;
+      updateSpeedDisplay(r); updateSpeedCommit(r);
+      closeMenus();
+    });
+    m.appendChild(b);
+  });
+}
 function updateSpeedDisplay(val) {
   speechRate = parseFloat(val);
-  document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
+  document.getElementById('speedVal').textContent = fmtRate(speechRate);
   applySpeedGradient(val);
   updateReadTime();
 }
@@ -2089,7 +2314,8 @@ function renderThemeGrid() {
   });
 }
 // Header popovers; at most one open. Each menu id maps to its button.
-const MENUS = { sizeMenu: 'aaBtn', themeMenu: 'themeBtn' };
+const MENUS = { sizeMenu: 'aaBtn', themeMenu: 'themeBtn', speedMenu: 'speedVal', chaptersMenu: 'chaptersBtn', sleepMenu: 'sleepBtn' };
+const MENU_SEL = Object.entries(MENUS).map(([m, b]) => '#' + m + ', #' + b).join(', ');
 function openMenu() { return Object.keys(MENUS).find(id => !document.getElementById(id).hidden) || null; }
 function toggleMenu(id, force) {
   const open = force !== undefined ? force : document.getElementById(id).hidden;
@@ -2101,7 +2327,7 @@ function toggleMenu(id, force) {
 }
 function closeMenus() { toggleMenu(null, false); }
 document.addEventListener('click', (e) => {
-  if (openMenu() && !e.target.closest('.display-menu, #aaBtn, #themeBtn')) closeMenus();
+  if (openMenu() && !e.target.closest(MENU_SEL)) closeMenus();
 });
 
 // Messages from the library/compose land here: the status row sits under
@@ -2212,7 +2438,7 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
   document.getElementById('fontSizeVal').textContent = fontSize + ' px';
   const ss = document.getElementById('speedSlider');
   ss.value = speechRate;
-  document.getElementById('speedVal').textContent = speechRate.toFixed(1) + '×';
+  document.getElementById('speedVal').textContent = fmtRate(speechRate);
   applySpeedGradient(speechRate);
   applyPositionGradient(0);
 
@@ -2237,6 +2463,9 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
   if (retitled) saveBooks(books);
 
   renderLibrary();
+  // Best effort: ask the browser not to evict the library (Safari may
+  // otherwise clear site data after ~7 days without a visit).
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
   // Reopen the last book at its saved position; else restore unsaved draft
   const lastId = localStorage.getItem('vox_last_book');
