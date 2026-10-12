@@ -185,6 +185,8 @@
   .bold-toggle.active .sw { background: var(--accent); }
   .bold-toggle.active .sw::after { left: 16px; }
   #readerPane.bold-text { font-weight: 600; }
+  /* Page width only matters on wide screens */
+  @media (max-width: 820px) { .width-opt { display: none; } }
   .dm-label {
     font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
     letter-spacing: 0.1em; text-transform: uppercase;
@@ -451,7 +453,7 @@
   }
 
   /* ── READER PANE ───────────────────────── */
-  .main-col { max-width: 760px; margin: 0 auto; }
+  .main-col { max-width: var(--col-max, 760px); margin: 0 auto; }
   .reader-wrap { padding: 12px 16px 0; position: relative; }
   .follow-pill {
     position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
@@ -681,6 +683,14 @@
     <button class="font-tile" data-spacing="normal" onclick="setSpacing('normal')">Normal</button>
     <button class="font-tile" data-spacing="loose" onclick="setSpacing('loose')">Loose</button>
   </div>
+  <div class="width-opt">
+    <div class="dm-label dm-label-gap">Page width</div>
+    <div class="opt-row" id="widthRow" role="group" aria-label="Page width">
+      <button class="font-tile" data-width="narrow" onclick="setPageWidth('narrow')">Narrow</button>
+      <button class="font-tile" data-width="medium" onclick="setPageWidth('medium')">Medium</button>
+      <button class="font-tile" data-width="wide" onclick="setPageWidth('wide')">Wide</button>
+    </div>
+  </div>
   <button class="font-tile bold-toggle" id="boldToggle" onclick="setBold(!boldText)" role="switch" aria-checked="false">
     <span><b>B</b>&nbsp; Bold text</span><span class="sw"></span>
   </button>
@@ -834,6 +844,8 @@ let currentFont = localStorage.getItem('vox_font') || 'lora';
 const SPACING = { tight: 1.5, normal: 1.85, loose: 2.25 };  // reader line-height
 let currentSpacing = localStorage.getItem('vox_spacing') || 'normal';
 let boldText = localStorage.getItem('vox_bold') === '1';
+const PAGE_WIDTHS = { narrow: '760px', medium: '1080px', wide: 'none' };  // .main-col max-width
+let currentWidth = localStorage.getItem('vox_width') || 'narrow';
 // "sepia" used to be the dark brown theme (now "mocha"); vox_theme_rev marks
 // stored values that already use the new names.
 if (currentTheme === 'sepia' && !localStorage.getItem('vox_theme_rev')) currentTheme = 'mocha';
@@ -2032,6 +2044,14 @@ function setSpacing(key) {
   try { localStorage.setItem('vox_spacing', key); } catch (e) {}
   if (words.length && !followPaused) scrollToCurrent();
 }
+function setPageWidth(key) {
+  if (!PAGE_WIDTHS[key]) key = 'narrow';
+  currentWidth = key;
+  document.documentElement.style.setProperty('--col-max', PAGE_WIDTHS[key]);
+  document.querySelectorAll('#widthRow .font-tile').forEach(t => t.classList.toggle('active', t.dataset.width === key));
+  try { localStorage.setItem('vox_width', key); } catch (e) {}
+  if (words.length && !followPaused) scrollToCurrent();
+}
 function setBold(on) {
   boldText = !!on;
   document.getElementById('readerPane').classList.toggle('bold-text', boldText);
@@ -2186,6 +2206,7 @@ if (KEEPALIVE && 'mediaSession' in navigator) {
   renderFontGrid();
   setFont(currentFont);
   setSpacing(currentSpacing);
+  setPageWidth(currentWidth);
   setBold(boldText);
   document.getElementById('readerPane').style.fontSize = fontSize + 'px';
   document.getElementById('fontSizeVal').textContent = fontSize + ' px';
