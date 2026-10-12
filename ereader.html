@@ -77,12 +77,13 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* Set for a moment while switching theme so nothing fades between themes */
+  .theme-switching, .theme-switching * { transition: none !important; }
 
   body {
     font-family: 'Lora', Georgia, serif;
     background: var(--bg);
     color: var(--text);
-    transition: background var(--tr), color var(--tr);
     padding-top: var(--header-h);
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
@@ -134,6 +135,13 @@
     -webkit-appearance: none;
   }
   .aa-btn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle { min-width: 30px; width: 30px; padding: 0; display: flex; align-items: center; justify-content: center; }
+  /* Swatch previews the current theme: page colour + accent */
+  .theme-swatch {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--bg) 50%, var(--accent) 50%);
+    box-shadow: 0 0 0 1px var(--text-muted);
+  }
 
   /* ── DISPLAY MENU (text size + theme) ─── */
   .display-menu {
@@ -145,12 +153,13 @@
     padding: 12px 14px 14px;
   }
   .display-menu[hidden] { display: none; }
+  .display-menu.size-menu { width: min(260px, calc(100vw - 20px)); }
   .dm-label {
     font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--text-muted); margin: 2px 0 8px;
   }
-  .dm-size { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .dm-size { display: flex; align-items: center; gap: 8px; }
   .dm-step {
     flex: 1; height: 40px; cursor: pointer;
     background: var(--surface2); border: 1px solid var(--border);
@@ -423,7 +432,6 @@
     -webkit-overflow-scrolling: touch;
     line-height: 1.85;
     font-size: 17px;
-    transition: background var(--tr);
   }
   #readerPane::-webkit-scrollbar { display: none; }
 
@@ -606,19 +614,22 @@
     <div class="logo">Vox <span>Reader</span></div>
   </div>
   <div class="header-right">
-    <button class="aa-btn" id="aaBtn" onclick="toggleDisplayMenu()" aria-label="Text size and theme" aria-expanded="false" aria-controls="displayMenu">Aa</button>
+    <button class="aa-btn" id="aaBtn" onclick="toggleMenu('sizeMenu')" aria-label="Text size" aria-expanded="false" aria-controls="sizeMenu">Aa</button>
+    <button class="aa-btn theme-toggle" id="themeBtn" onclick="toggleMenu('themeMenu')" aria-label="Theme" aria-expanded="false" aria-controls="themeMenu"><span class="theme-swatch"></span></button>
     <a class="rsvp-link" href="rsvp-reader.html?v=5">RSVP</a>
   </div>
 </header>
 
-<!-- DISPLAY MENU -->
-<div class="display-menu" id="displayMenu" hidden>
+<!-- HEADER MENUS: text size, theme -->
+<div class="display-menu size-menu" id="sizeMenu" hidden>
   <div class="dm-label">Text size</div>
   <div class="dm-size">
     <button class="dm-step" onclick="changeFontSize(-1)" aria-label="Smaller text">A−</button>
     <span class="dm-size-val" id="fontSizeVal">17 px</span>
     <button class="dm-step" onclick="changeFontSize(1)" aria-label="Larger text">A+</button>
   </div>
+</div>
+<div class="display-menu" id="themeMenu" hidden>
   <div class="dm-label">Theme</div>
   <div class="dm-themes" id="themeGrid"></div>
 </div>
@@ -876,7 +887,7 @@ function restartAt(g, delayMs) {
 // DRAWER
 // ════════════════════════════════════════
 function openDrawer() {
-  toggleDisplayMenu(false);
+  closeMenus();
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1866,8 +1877,12 @@ function changeFontSize(delta) {
 function setTheme(name) {
   if (!THEMES.some(t => t[0] === name)) name = 'dark';
   currentTheme = name;
+  const root = document.documentElement;
+  root.classList.add('theme-switching');
   THEMES.forEach(([k]) => document.body.classList.remove('theme-' + k));
   if (name !== 'dark') document.body.classList.add('theme-' + name);
+  void root.offsetHeight;  // apply the new colours with transitions off
+  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
   document.querySelectorAll('.theme-tile').forEach(t => t.classList.toggle('active', t.dataset.theme === name));
   try { localStorage.setItem('vox_theme', name); localStorage.setItem('vox_theme_rev', '2'); } catch (e) {}
 }
@@ -1886,14 +1901,20 @@ function renderThemeGrid() {
     grid.appendChild(t);
   });
 }
-function displayMenuOpen() { return !document.getElementById('displayMenu').hidden; }
-function toggleDisplayMenu(force) {
-  const open = force !== undefined ? force : !displayMenuOpen();
-  document.getElementById('displayMenu').hidden = !open;
-  document.getElementById('aaBtn').setAttribute('aria-expanded', String(open));
+// Header popovers; at most one open. Each menu id maps to its button.
+const MENUS = { sizeMenu: 'aaBtn', themeMenu: 'themeBtn' };
+function openMenu() { return Object.keys(MENUS).find(id => !document.getElementById(id).hidden) || null; }
+function toggleMenu(id, force) {
+  const open = force !== undefined ? force : document.getElementById(id).hidden;
+  Object.keys(MENUS).forEach(m => {
+    const on = m === id && open;
+    document.getElementById(m).hidden = !on;
+    document.getElementById(MENUS[m]).setAttribute('aria-expanded', String(on));
+  });
 }
+function closeMenus() { toggleMenu(null, false); }
 document.addEventListener('click', (e) => {
-  if (displayMenuOpen() && !e.target.closest('#displayMenu, #aaBtn')) toggleDisplayMenu(false);
+  if (openMenu() && !e.target.closest('.display-menu, #aaBtn, #themeBtn')) closeMenus();
 });
 
 // Messages from the library/compose land here: the status row sits under
@@ -1939,7 +1960,7 @@ document.addEventListener('keydown', (e) => {
   }
   // (A focused Speed/Position slider falls through: arrows/Space stay
   // playback shortcuts instead of nudging the slider.)
-  if (e.key === 'Escape') { if (displayMenuOpen()) toggleDisplayMenu(false); else closeDrawer(); return; }
+  if (e.key === 'Escape') { if (openMenu()) closeMenus(); else closeDrawer(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === 'l' || e.key === 'L') { toggleDrawer(); return; }
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); togglePlay(); }
